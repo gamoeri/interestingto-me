@@ -1,0 +1,758 @@
+/* Topic Content Styles */
+.topic-content {
+  background-color: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.topic-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  border-bottom: 1px solid #f0f0f0;
+  padding-bottom: 16px;
+}
+
+.topic-title-section {
+  flex-grow: 1;
+}
+
+/* Title and bookmark row - NEW */
+.title-bookmark-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+}
+
+.topic-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #111827;
+  margin: 0 0 8px 0;
+  flex-grow: 1;
+  padding-right: 16px; /* Space between title and bookmark button */
+}
+
+.topic-owner {
+  font-size: 0.9rem;
+  color: #6b7280;
+}
+
+.owner-name {
+  font-weight: 600;
+  color: #4b5563;
+}
+
+/* Bookmark button */
+.bookmark-button {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background-color: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 8px 16px;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.bookmark-button:hover {
+  background-color: #f9fafb;
+  border-color: #d1d5db;
+}
+
+.bookmark-button.bookmarked {
+  background-color: #fef3c7;
+  border-color: #fbbf24;
+  color: #92400e;
+}
+
+/* Add topic button and form */
+.add-topic-button {
+  color: #a4a4a4;
+  font-size: 0.9rem;
+  background: none;
+  border: none;
+  font-weight: 500;
+  padding: 8px 0;
+  cursor: pointer;
+  display: inline-block;
+  width: 100%;
+  text-align: left;
+}
+
+.add-topic-button:hover {
+  background-color: #11182713;
+}
+
+.add-topic-form {
+  margin-top: 12px;
+}
+
+/* Content Section */
+.topic-content-section {
+  background-color: #f9fafb;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+  overflow: hidden;
+}
+
+.content-edit-container {
+  padding: 16px;
+  position: relative; /* Added for the done button */
+}
+
+/* Add a visible done button in edit mode */
+.content-edit-container::after {
+  content: "Done";
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  background-color: #3b82f6;
+  color: white;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  z-index: 10;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.content-textarea {
+  width: 100%;
+  min-height: 200px;
+  resize: vertical;
+  margin-bottom: 16px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  padding: 12px;
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+
+.content-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
+.content-display-container {
+  padding: 20px;
+  position: relative;
+}
+
+.content-text {
+  font-size: 0.95rem;
+  line-height: 1.6;
+  color: #1f2937;
+  white-space: pre-wrap;
+}
+
+.content-text p {
+  margin: 0 0 16px 0;
+}
+
+.content-text p:last-child {
+  margin-bottom: 0;
+}
+
+.content-text a {
+  color: #2563eb;
+  text-decoration: underline;
+}
+
+.empty-content {
+  color: #6b7280;
+  font-style: italic;
+  margin: 0;
+}
+
+.edit-button {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  background-color: #f3f4f6;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  padding: 6px 12px;
+  font-size: 0.85rem;
+  color: #4b5563;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  opacity: 0.9; /* Ensure it's always visible */
+  z-index: 5;
+}
+
+.edit-button:hover {
+  background-color: #e5e7eb;
+  color: #374151;
+}
+
+/* Style for done button state */
+.edit-button.done-button {
+  background-color: #3b82f6;
+  color: white;
+  border-color: #2563eb;
+}
+
+.edit-button.done-button:hover {
+  background-color: #2563eb;
+}
+
+/* Topic Notes Section */
+.topic-notes-section {
+  margin-top: 24px;
+  border-top: 1px solid #e5e7eb;
+  padding-top: 24px;
+}
+
+.topic-notes-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin: 0 0 16px 0;
+}
+
+.topic-notes-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.empty-topic-notes {
+  color: #6b7280;
+  text-align: center;
+  padding: 16px;
+  background-color: #f9fafb;
+  border-radius: 8px;
+  font-style: italic;
+}
+
+/* Topic Content Wrapper - NEW */
+.topic-content-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+/* Comments Section Wrapper - NEW */
+.comments-section-wrapper {
+  padding: 0 24px;  /* Same padding as the main content area */
+}
+
+/* Comments Section */
+.comments-section {
+  padding-top: 24px;
+  background-color: transparent;  /* Transparent background */
+}
+
+.comments-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin: 0 0 16px 0;
+}
+
+.comment-form {
+  margin-bottom: 24px;
+  background-color: white;
+  border-radius: 8px;
+  padding: 16px;
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.comment-textarea {
+  width: 100%;
+  min-height: 100px;
+  resize: vertical;
+  margin-bottom: 16px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  padding: 12px;
+  font-size: 0.95rem;
+}
+
+.comment-submit {
+  background-color: #3b82f6;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 8px 16px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.comment-submit:hover {
+  background-color: #2563eb;
+}
+
+.comments-list-container {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.comments-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.comment-item {
+  background-color: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 16px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.comment-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.comment-author {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.comment-avatar,
+.comment-avatar-placeholder {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.comment-avatar {
+  object-fit: cover;
+  border: 2px solid #e5e7eb;
+}
+
+.comment-avatar-placeholder {
+  background-color: #3b82f6;
+  color: white;
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.author-name {
+  font-weight: 600;
+  color: #111827;
+  font-size: 0.95rem;
+}
+
+.comment-date {
+  color: #6b7280;
+  font-size: 0.8rem;
+}
+
+.comment-content {
+  margin: 0;
+  font-size: 0.95rem;
+  line-height: 1.6;
+  color: #1f2937;
+}
+
+.empty-comments {
+  color: #6b7280;
+  text-align: center;
+  padding: 16px;
+  background-color: #0000000c;
+  border-radius: 8px;
+  font-style: italic;
+}
+
+/* Bookmarked topics styling */
+.bookmarked-topic {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
+
+.topic-owner-label {
+  font-size: 0.8rem;
+  color: #6b7280;
+  margin-top: 2px;
+}
+
+/* Topic Metadata Styles - NEW */
+.topic-metadata {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 8px;
+  font-size: 0.85rem;
+  color: #6b7280;
+}
+
+.topic-dates {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.created-date,
+.updated-date {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.created-date span,
+.updated-date span,
+.bookmark-count span {
+  font-weight: 500;
+  color: #4b5563;
+}
+
+.bookmark-count {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 4px;
+}
+
+.bookmark-count::before {
+  content: "★";
+  font-size: 0.9rem;
+  color: #fbbf24;
+}
+
+/* Enhanced Bookmark Button - NEW */
+.bookmark-button {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background-color: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 8px 16px;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.bookmark-button:hover {
+  background-color: #f9fafb;
+  border-color: #d1d5db;
+}
+
+.bookmark-button.bookmarked {
+  background-color: #fef3c7;
+  border-color: #fbbf24;
+  color: #92400e;
+}
+
+/* Responsive adjustments for mobile - NEW */
+@media (max-width: 640px) {
+  .topic-metadata {
+    margin-top: 12px;
+  }
+  
+  .topic-header {
+    flex-direction: column;
+    gap: 12px;
+  }
+  
+  .bookmark-button {
+    align-self: flex-start;
+  }
+}
+
+/* Delete Topic Section */
+.delete-topic-section {
+  margin-top: 20px;
+  padding: 16px;
+  background-color: #fee2e2;
+  border: 1px solid #fecaca;
+  border-radius: 6px;
+  display: block !important;
+  position: relative;
+  z-index: 10;
+}
+
+.delete-topic-section h3 {
+  color: #b91c1c;
+  font-size: 1rem;
+  font-weight: 600;
+  margin: 0 0 12px 0;
+}
+
+.delete-topic-button {
+  background-color: #ef4444;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 8px 16px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  width: 100%;
+  display: block !important;
+}
+
+.delete-topic-button:hover {
+  background-color: #dc2626;
+}
+
+.delete-topic-button:hover {
+  background-color: #dc2626;
+}
+
+.delete-confirm {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.delete-confirm p {
+  margin: 0;
+  color: #7f1d1d;
+  font-size: 0.9rem;
+}
+
+.delete-confirm-buttons {
+  display: flex;
+  gap: 8px;
+}
+
+.confirm-delete-button {
+  background-color: #ef4444;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 8px 16px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  flex-grow: 1;
+}
+
+.confirm-delete-button:hover {
+  background-color: #dc2626;
+}
+
+.cancel-delete-button {
+  background-color: white;
+  color: #4b5563;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  padding: 8px 16px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.cancel-delete-button:hover {
+  background-color: #f3f4f6;
+}/* Settings Button */
+.topic-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.settings-button {
+  background: none;
+  border: none;
+  font-size: 1.2rem;
+  cursor: pointer;
+  color: #6b7280;
+  padding: 4px 8px;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+}
+
+.settings-button:hover {
+  color: #4b5563;
+  background-color: #f3f4f6;
+}
+
+/* Settings Panel */
+.settings-panel {
+  padding: 24px;
+  background-color: white;
+  border-radius: 8px;
+}
+
+.settings-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.settings-header h2 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #111827;
+  margin: 0;
+}
+
+.close-settings-button {
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  line-height: 1;
+  cursor: pointer;
+  color: #6b7280;
+  padding: 4px 8px;
+}
+
+.close-settings-button:hover {
+  color: #4b5563;
+}
+
+.settings-form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.form-group label {
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: #4b5563;
+}
+
+.settings-input {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 0.95rem;
+  color: #111827;
+}
+
+.settings-input:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+}
+
+/* Archive Toggle */
+.archive-toggle {
+  margin-top: 8px;
+}
+
+.toggle-container {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.toggle-checkbox {
+  appearance: none;
+  width: 40px;
+  height: 20px;
+  background-color: #e5e7eb;
+  border-radius: 20px;
+  position: relative;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.toggle-checkbox:checked {
+  background-color: #3b82f6;
+}
+
+.toggle-checkbox::before {
+  content: "";
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 16px;
+  height: 16px;
+  background-color: white;
+  border-radius: 50%;
+  transition: transform 0.2s ease;
+}
+
+.toggle-checkbox:checked::before {
+  transform: translateX(20px);
+}
+
+.toggle-label {
+  font-size: 0.9rem;
+  color: #6b7280;
+}
+
+.archive-info {
+  font-size: 0.85rem;
+  color: #6b7280;
+  font-style: italic;
+  margin-top: -12px;
+}
+
+/* Settings Actions */
+.settings-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 12px;
+  padding-top: 20px;
+  border-top: 1px solid #e5e7eb;
+}
+
+.save-settings-button {
+  background-color: #3b82f6;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 8px 16px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.save-settings-button:hover {
+  background-color: #2563eb;
+}
+
+.save-settings-button:disabled {
+  background-color: #9ca3af;
+  cursor: not-allowed;
+}
+
+.cancel-settings-button {
+  background-color: white;
+  color: #4b5563;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  padding: 8px 16px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.cancel-settings-button:hover {
+  background-color: #f3f4f6;
+  color: #111827;
+}

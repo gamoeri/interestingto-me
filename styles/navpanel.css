@@ -1,0 +1,372 @@
+/* NavPanel structure for fixed profile card */
+.nav-panel {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    position: relative;
+    gap: 12px;
+  }
+  
+  /* Scrollable area that contains all nav items except the profile card */
+  .nav-scroll-area {
+    flex: 1;
+    overflow-y: auto;
+    padding-bottom: 16px;
+    scrollbar-width: thin;
+  }
+  
+  /* Container for the fixed profile card at the bottom */
+  .profile-card-fixed-container {
+    position: sticky;
+    bottom: 0;
+    background: inherit; /* Match parent background */
+    margin-top: auto; /* Push to bottom when content is short */
+    width: 100%;
+    z-index: 5; /* Ensure it stays above scrolling content */
+  }
+  
+  /* Style for the nav divider before the fixed profile card */
+  .profile-card-fixed-container .nav-divider {
+    margin: 0 0 8px 0;
+  }
+  
+  /* For WebKit browsers */
+  .nav-scroll-area::-webkit-scrollbar {
+    width: 4px;
+  }
+  
+  .nav-scroll-area::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  
+  .nav-scroll-area::-webkit-scrollbar-thumb {
+    background-color: rgba(0, 0, 0, 0.1);
+    border-radius: 4px;
+  }
+  
+  /* Make sure dropdown menu appears above other elements */
+  .profile-dropdown-menu {
+    position: absolute;
+    right: 12px;
+    bottom: 45px; /* Position above the button instead of below */
+    background-color: white !important;
+    z-index: 1000;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    min-width: 150px;
+    padding: 4px 0;
+  }
+  
+  /* Nav Panel structure */
+  .nav-container {
+    background-color: transparent;
+    padding: 0rem;
+    margin-bottom: 20px;
+  }
+    
+  .nav-title {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 1rem;
+    font-weight: 400;
+    margin-bottom: 0rem;
+    margin-top: 0.5rem;
+    color:#68717e;
+  }
+  
+  .nav-item {
+    padding: 0.6rem;
+    border-radius: 0.25rem;
+    cursor: pointer;
+    margin-bottom: 0.3rem;
+    padding-left: 1rem;
+    color: #4c4e53;
+  }
+    
+  .nav-item:hover {
+    background-color: #0000000c;
+  }
+    
+  .nav-item-active {
+    background-color: #0000001c;
+    color: #424653;
+  }
+
+  .nav-item.nav-item-active {
+    background-color: rgba(59, 130, 246, 0.15) !important; /* Light blue background with !important */
+    color: #1e40af; /* Darker blue text */
+  }
+
+  .nav-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+  
+  .nav-divider {
+    height: 1px;
+    background-color: #e1e1e1;
+    margin: 15px 0;
+    width: 100%;
+  }
+  
+  .nav-item-content {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  
+  /* Topic Edit Mode */
+  .edit-topics-button {
+    background: none;
+    border: none;
+    font-size: 0.75rem;
+    opacity: 0.8; /* Changed from 0 to 0.8 to ensure visibility */
+    transition: opacity 0.2s;
+    cursor: pointer;
+    color: #68717e;
+    padding: 2px 4px;
+    border-radius: 4px;
+  }
+  
+  /* Add styling for when in edit mode */
+  .edit-topics-button.editing {
+    opacity: 1;
+    background-color: #e5e7eb;
+    color: #374151;
+    font-weight: bold;
+  }
+  
+  /* Add "Done" text when in edit mode */
+  .edit-topics-button.editing::after {
+    content: " (Done)";
+    font-weight: bold;
+  }
+  
+  .nav-title:hover .edit-topics-button {
+    opacity: 1;
+  }
+  
+  .edit-topics-button:hover {
+    opacity: 1 !important;
+    background-color: rgba(0, 0, 0, 0.05);
+  }
+  
+  .edit-topics-button:focus,
+  .edit-topics-button:active {
+    opacity: 1;
+  }
+  
+  .topic-edit-mode .delete-topic-button {
+    display: block;
+  }
+  
+  .delete-topic-button {
+    display: none;
+    background: none;
+    border: none;
+    font-size: 1rem;
+    color: #9ca3af;
+    cursor: pointer;
+    padding: 0 4px;
+    transition: color 0.2s;
+  }
+  
+  .delete-topic-button:hover {
+    color: #ef4444;
+  }
+  
+  .topic-actions {
+    display: flex;
+    gap: 5px;
+  }
+  
+  .archive-topic-button,
+  .unarchive-topic-button {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 16px;
+    padding: 0;
+    margin: 0;
+    color: #555;
+  }
+  
+  .archive-topic-button:hover,
+  .unarchive-topic-button:hover {
+    color: #1a73e8;
+  }
+  
+  .archived-topic {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    color: #666;
+  }
+  
+  /* Back button */
+  .back-to-my-notes-button {
+    display: block;
+    width: 100%;
+    text-align: left;
+    padding: 10px 12px;
+    margin-bottom: 12px;
+    border: none;
+    border-radius: 6px;
+    background-color: #f3f4f6;
+    color: #4b5563;
+    font-size: 0.9rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+  
+  .back-to-my-notes-button:hover {
+    background-color: #e5e7eb;
+    color: #111827;
+  }
+  
+  .viewed-user-info {
+    margin-bottom: 16px;
+  }
+  
+  .viewed-user-info h3 {
+    font-size: 0.95rem;
+    color: #4b5563;
+    margin: 0;
+    padding: 0 12px;
+    font-weight: 500;
+  }
+  
+  /* Profile Card */
+  .profile-card {
+    background-color: transparent;
+    border-radius: 8px;
+    padding: 12px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+  }
+  
+  .profile-card:hover {
+    background-color: rgba(0, 0, 0, 0.05); /* Subtle hover effect */
+  }
+  
+  .profile-card-active {
+    background-color: rgba(59, 130, 246, 0.08); /* Light blue for active state */
+  }
+    
+  .profile-pic-wrapper {
+    position: relative;
+    width: 50px;
+    height: 50px;
+    flex-shrink: 0;
+    margin-right: 8px;
+  }
+    
+  .profile-info {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    flex-grow: 1;
+  }
+    
+  .profile-name {
+    font-size: 1rem;
+    font-weight: 600;
+    margin: 0 0 4px 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+    
+  .profile-bio-preview {
+    font-size: 0.875rem;
+    color: #6b7280;
+    margin: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    transition: color 0.2s ease;
+  }
+  
+  .profile-card:hover .profile-bio-preview {
+    color: #4b5563; /* Slightly darker on hover */
+  }
+  
+  /* Kebab Menu Styles */
+  .profile-menu-container {
+    position: relative; /* Changed from absolute to relative */
+    display: inline-block; /* Added to contain the dropdown properly */
+    z-index: 5;
+  }
+  
+  .kebab-menu-button {
+    background: none;
+    border: none;
+    font-size: 1.2rem;
+    cursor: pointer;
+    opacity: 0;
+    color: #68717e;
+    padding: 2px 6px;
+    border-radius: 4px;
+    transition: all 0.2s ease-in-out;
+  }
+  
+  .profile-card:hover .kebab-menu-button {
+    opacity: 1 !important;
+    background-color: rgba(0, 0, 0, 0.05);  }
+  
+  .kebab-menu-button:hover {
+    opacity: 1 !important;
+    background-color: rgba(0, 0, 0, 0.05);
+  }
+  
+  .profile-dropdown-menu {
+    position: absolute;
+    right: 0;
+    top: 100%; /* Position below the kebab button */
+    z-index: 10;
+    background-color: white; /* Ensure this is working */
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    min-width: 150px;
+    margin-top: 4px;
+    overflow: hidden; /* Ensure content doesn't overflow */
+  }
+  
+  .menu-item {
+    display: block;
+    width: 100%;
+    text-align: left;
+    padding: 8px 12px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    transition: background-color 0.2s;
+    color: #4b5563;
+    font-size: 0.875rem;
+  }
+  
+  .menu-item:hover {
+    background-color: #f3f4f6;
+    color: #111827;
+  }
+
+  .profile-dropdown-menu-portal {
+    position: fixed;
+    background-color: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+    z-index: 1000;
+    min-width: 150px;
+    padding: 4px 0;
+    /* We'll position this with JS */
+  }
