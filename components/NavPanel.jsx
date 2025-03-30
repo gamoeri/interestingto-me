@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
+import Link from 'next/link'
 
 export default function NavPanel({
   userProfile,
@@ -8,15 +9,12 @@ export default function NavPanel({
   bookmarkedTopics = [],
   archivedTopics = [], 
   topicsLoading,
-  activeSection,
-  onSelectSection,
+  onSignOut,
   onAddTopic,
   onDeleteTopic,
-  onSignOut,
   onArchiveTopic = () => {}, 
   onUnarchiveTopic = () => {},
-  isViewingOtherUser = false,
-  viewedUserName = ''
+  currentPath
 }) {
   const [newTopic, setNewTopic] = useState('')
   const [showAddTopic, setShowAddTopic] = useState(false)
@@ -68,33 +66,31 @@ export default function NavPanel({
     }
   }, [showProfileMenu])
 
+  // Check if a path is active
+  const isActive = (path) => {
+    return currentPath === path
+  }
+
   return (
     <>
       <div className="nav-panel">
-        {/* Scrollable content area */}
         <div className="nav-scroll-area">
           {/* Main Navigation Pages - At the top */}
           <div className="nav-container">
             <ul className="nav-list">
-              <li 
-                className={`nav-item ${activeSection === 'user' ? 'nav-item-active' : ''}`}
-                onClick={() => onSelectSection('user')}
-              >
-                <div className="nav-item-content">
+              <li className={`nav-item ${isActive('/notes') ? 'nav-item-active' : ''}`}>
+                <Link href="/notes" className="nav-item-content">
                   <div className="nav-icon-wrapper">
-                      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                          <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" />
-                          <path d="m15 5 4 4" />
-                      </svg>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" />
+                      <path d="m15 5 4 4" />
+                    </svg>
                   </div>
                   <span>Notes</span>
-                </div>
+                </Link>
               </li>
-              <li 
-                className={`nav-item ${activeSection === 'home' ? 'nav-item-active' : ''}`}
-                onClick={() => onSelectSection('home')}
-              >
-                <div className="nav-item-content">
+              <li className={`nav-item ${isActive('/home') ? 'nav-item-active' : ''}`}>
+                <Link href="/home" className="nav-item-content">
                   <div className="nav-icon-wrapper">
                     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                       <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
@@ -102,21 +98,17 @@ export default function NavPanel({
                     </svg>
                   </div>
                   <span>Home</span>
-                </div>
+                </Link>
               </li>
-              <li 
-                className={`nav-item ${activeSection === 'search' ? 'nav-item-active' : ''}`}
-                onClick={() => onSelectSection('search')}
-              >
-                <div className="nav-item-content">
+              <li className={`nav-item ${isActive('/bookmarks') ? 'nav-item-active' : ''}`}>
+                <Link href="/bookmarks" className="nav-item-content">
                   <div className="nav-icon-wrapper">
                     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <circle cx="11" cy="11" r="8" />
-                      <line x1="21" y1="21" x2="16.65" y2="16.65" />
+                      <path d="m19 21-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z" />
                     </svg>
                   </div>
-                  <span>Search</span>
-                </div>
+                  <span>Bookmarks</span>
+                </Link>
               </li>
             </ul>
           </div>
@@ -124,33 +116,15 @@ export default function NavPanel({
           {/* Divider */}
           <div className="nav-divider"></div>
           
-          {/* When viewing another user's profile, show back button */}
-          {isViewingOtherUser && (
-            <div className="nav-container">
-              <button 
-                className="back-to-my-notes-button"
-                onClick={() => onSelectSection('user')}
-              >
-                ← Back to my notes
-              </button>
-              
-              <div className="viewed-user-info">
-                <h3>Viewing: {viewedUserName || 'User'}</h3>
-              </div>
-            </div>
-          )}
-          
           {/* Topics Section */}
           <div className="nav-title">
             Topics
-            {!isViewingOtherUser && (
-              <button 
-                className="edit-topics-button"
-                onClick={() => setTopicsEditMode(!topicsEditMode)}
-              >
-                {topicsEditMode ? 'Done' : 'Edit'}
-              </button>
-            )}
+            <button 
+              className="edit-topics-button"
+              onClick={() => setTopicsEditMode(!topicsEditMode)}
+            >
+              {topicsEditMode ? 'Done' : 'Edit'}
+            </button>
           </div>
           <div className={`nav-container ${topicsEditMode ? 'topic-edit-mode' : ''}`}>
             {topicsLoading ? (
@@ -161,14 +135,15 @@ export default function NavPanel({
                   {topics.map((topic) => (
                     <li 
                       key={topic.id}
-                      className={`nav-item ${activeSection === `topic-${topic.id}` ? 'nav-item-active' : ''}`}
+                      className={`nav-item ${isActive(`/topics/${topic.id}`) ? 'nav-item-active' : ''}`}
                     >
-                      <div 
-                        onClick={() => !topicsEditMode && onSelectSection(`topic-${topic.id}`)}
-                        style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
-                      >
-                        <span>{topic.name}</span>
-                        {topicsEditMode && !isViewingOtherUser && (
+                      {!topicsEditMode ? (
+                        <Link href={`/topics/${topic.id}`} className="nav-item-content">
+                          <span>{topic.name}</span>
+                        </Link>
+                      ) : (
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <span>{topic.name}</span>
                           <div className="topic-actions">
                             <button 
                               onClick={(e) => {
@@ -195,13 +170,13 @@ export default function NavPanel({
                               ×
                             </button>
                           </div>
-                        )}
-                      </div>
+                        </div>
+                      )}
                     </li>
                   ))}
                 </ul>
                 
-                {!topicsEditMode && !isViewingOtherUser && (
+                {!topicsEditMode && (
                   <>
                     {showAddTopic ? (
                       <form onSubmit={handleAddTopic} className="add-topic-form">
@@ -240,18 +215,17 @@ export default function NavPanel({
             )}
           </div>
           
-          {/* Archive Section - Only show for the user's own profile */}
-          {!isViewingOtherUser && archivedTopics && archivedTopics.length > 0 && (
+          {/* Archive Section */}
+          {archivedTopics && archivedTopics.length > 0 && (
             <div className="nav-container">
               <h2 className="nav-title">Archive</h2>
               <ul className="nav-list">
                 {archivedTopics.map((topic) => (
                   <li 
                     key={topic.id}
-                    className={`nav-item ${activeSection === `topic-${topic.id}` ? 'nav-item-active' : ''}`}
-                    onClick={() => onSelectSection(`topic-${topic.id}`)}
+                    className={`nav-item ${isActive(`/topics/${topic.id}`) ? 'nav-item-active' : ''}`}
                   >
-                    <div className="archived-topic">
+                    <Link href={`/topics/${topic.id}`} className="archived-topic">
                       <span>{topic.name}</span>
                       {topicsEditMode && (
                         <button 
@@ -265,28 +239,7 @@ export default function NavPanel({
                           🔄
                         </button>
                       )}
-                    </div>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
-          
-          {/* Bookmarked Topics Section - Only show for the user's own profile */}
-          {!isViewingOtherUser && bookmarkedTopics && bookmarkedTopics.length > 0 && (
-            <div className="nav-container">
-              <h2 className="nav-title">Bookmarked Topics</h2>
-              <ul className="nav-list">
-                {bookmarkedTopics.map((topic) => (
-                  <li 
-                    key={topic.id}
-                    className={`nav-item ${activeSection === `topic-${topic.id}` ? 'nav-item-active' : ''}`}
-                    onClick={() => onSelectSection(`topic-${topic.id}`)}
-                  >
-                    <div className="bookmarked-topic">
-                      <span>{topic.name}</span>
-                      <small className="topic-owner-label">by {topic.ownerName || 'Unknown'}</small>
-                    </div>
+                    </Link>
                   </li>
                 ))}
               </ul>
@@ -294,47 +247,42 @@ export default function NavPanel({
           )}
         </div>
         
-        {/* Fixed Profile Card - At the bottom, outside of scroll area */}
-        {!isViewingOtherUser && (
-          <div className="profile-card-fixed-container">
-            <div className="nav-divider"></div>
-            <div 
-              className={`profile-card ${activeSection === 'user' ? 'profile-card-active' : ''}`}
-              onClick={() => onSelectSection('user')}
-            >
-              <div className="profile-pic-wrapper">
-                {userProfile?.profilePic ? (
-                  <img 
-                    src={userProfile.profilePic} 
-                    alt="Profile" 
-                    className="profile-pic"
-                  />
-                ) : (
-                  <div className="profile-pic-placeholder">
-                    {userProfile?.displayName ? userProfile.displayName.charAt(0).toUpperCase() : '?'}
-                  </div>
-                )}
-              </div>
-              <div className="profile-info">
-                <h3 className="profile-name">{userProfile?.displayName || 'User'}</h3>
-                <p className="profile-bio-preview">{userProfile?.bio?.substring(0, 60) || 'No bio yet'}</p>
-              </div>
-              
-              {/* Kebab Menu Button - Just the button */}
-              <button 
-                ref={kebabButtonRef}
-                className="kebab-menu-button"
-                onClick={handleKebabClick}
-                aria-label="Profile options"
-              >
-                ⋮
-              </button>
+        {/* Fixed Profile Card */}
+        <div className="profile-card-fixed-container">
+          <div className="nav-divider"></div>
+          <Link href="/profile" className={`profile-card ${isActive('/profile') ? 'profile-card-active' : ''}`}>
+            <div className="profile-pic-wrapper">
+              {userProfile?.profilePic ? (
+                <img 
+                  src={userProfile.profilePic} 
+                  alt="Profile" 
+                  className="profile-pic"
+                />
+              ) : (
+                <div className="profile-pic-placeholder">
+                  {userProfile?.displayName ? userProfile.displayName.charAt(0).toUpperCase() : '?'}
+                </div>
+              )}
             </div>
-          </div>
-        )}
+            <div className="profile-info">
+              <h3 className="profile-name">{userProfile?.displayName || 'User'}</h3>
+              <p className="profile-bio-preview">{userProfile?.bio?.substring(0, 60) || 'No bio yet'}</p>
+            </div>
+            
+            {/* Kebab Menu Button */}
+            <button 
+              ref={kebabButtonRef}
+              className="kebab-menu-button"
+              onClick={handleKebabClick}
+              aria-label="Profile options"
+            >
+              ⋮
+            </button>
+          </Link>
+        </div>
       </div>
       
-      {/* Dropdown Menu - Rendered at the root level */}
+      {/* Dropdown Menu */}
       {showProfileMenu && (
         <div 
           className="profile-dropdown-menu-portal"
@@ -352,13 +300,9 @@ export default function NavPanel({
           }}
           onClick={(e) => e.stopPropagation()}
         >
-          <button
+          <Link 
+            href="/profile/edit"
             className="menu-item"
-            onClick={(e) => {
-              e.stopPropagation();
-              onSelectSection('edit-profile');
-              setShowProfileMenu(false);
-            }}
             style={{
               display: 'block',
               width: '100%',
@@ -368,11 +312,13 @@ export default function NavPanel({
               border: 'none',
               cursor: 'pointer',
               color: '#4b5563',
-              fontSize: '0.875rem'
+              fontSize: '0.875rem',
+              textDecoration: 'none'
             }}
+            onClick={() => setShowProfileMenu(false)}
           >
             Account Settings
-          </button>
+          </Link>
           <button
             className="menu-item"
             onClick={(e) => {

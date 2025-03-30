@@ -1,18 +1,30 @@
-import Link from 'next/link'
+'use client'
+
+import { useEffect } from 'react'
+import { useRouter } from 'next/navigation'
+import { auth } from '@/lib/firebase'
 
 export default function Home() {
+  const router = useRouter()
+
+  useEffect(() => {
+    const unsubscribe = auth.onAuthStateChanged((user) => {
+      if (user) {
+        // User is signed in, redirect to notes
+        router.push('/notes')
+      } else {
+        // No user is signed in, redirect to signin
+        router.push('/signin')
+      }
+    })
+
+    return () => unsubscribe()
+  }, [router])
+
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center p-24">
-      <h1 className="text-4xl font-bold mb-8">interestingto.me</h1>
-      <p className="text-xl mb-8">Share and discover interesting things</p>
-      <div className="flex gap-4">
-        <Link href="/signin" className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
-          Sign In
-        </Link>
-        <Link href="/signup" className="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded">
-          Sign Up
-        </Link>
-      </div>
-    </main>
+    <div className="loading-container">
+      <div className="loading-spinner"></div>
+      <p>Loading...</p>
+    </div>
   )
 }

@@ -15,8 +15,10 @@ import {
   arrayRemove
 } from 'firebase/firestore'
 import { db, auth } from '@/lib/firebase'
+import { useRouter } from 'next/navigation'
 
-export default function TopicContent({ topicId, userId, onTopicDeleted }) {
+export default function TopicContent({ topicId, userId, onTopicDeleted, onBookmarkToggle }) {
+  const router = useRouter()
   const [topic, setTopic] = useState(null)
   const [content, setContent] = useState('')
   const [isEditing, setIsEditing] = useState(false)
@@ -31,10 +33,10 @@ export default function TopicContent({ topicId, userId, onTopicDeleted }) {
   const [bookmarkCount, setBookmarkCount] = useState(0)
   const [isArchived, setIsArchived] = useState(false)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+  const [pinnedNotes, setPinnedNotes] = useState([]) // New state for pinned notes
   
   // Check if current user is the owner of this topic
   const isOwner = userId === topic?.userId
-  console.log('Is user the owner?', isOwner, 'userId:', userId, 'topic.userId:', topic?.userId)
 
   useEffect(() => {
     const fetchTopic = async () => {
@@ -96,6 +98,7 @@ export default function TopicContent({ topicId, userId, onTopicDeleted }) {
                   const authorData = authorDoc.data()
                   comment.author = authorData.displayName || 'Unknown'
                   comment.profilePic = authorData.profilePic || null
+                  comment.authorId = comment.userId // Store the author ID for linking
                 }
               }
               
@@ -104,6 +107,38 @@ export default function TopicContent({ topicId, userId, onTopicDeleted }) {
           )
           
           setComments(commentsData)
+          
+          // Fetch pinned notes
+          // First check if topic has pinnedNoteIds array
+          const pinnedNoteIds = topicData.pinnedNoteIds || []
+          
+          if (pinnedNoteIds.length > 0) {
+            // Fetch each note by ID
+            const pinnedNotesData = await Promise.all(
+              pinnedNoteIds.map(async (noteId) => {
+                const noteDoc = await getDoc(doc(db, 'notes', noteId))
+                if (noteDoc.exists()) {
+                  const noteData = { id: noteDoc.id, ...noteDoc.data() }
+                  
+                  // Fetch author info if not already included
+                  if (noteData.authorId && !noteData.author) {
+                    const authorDoc = await getDoc(doc(db, 'users', noteData.authorId))
+                    if (authorDoc.exists()) {
+                      const authorData = authorDoc.data()
+                      noteData.author = authorData.displayName || 'Unknown'
+                      noteData.profilePic = authorData.profilePic || null
+                    }
+                  }
+                  
+                  return noteData
+                }
+                return null
+              })
+            )
+            
+            // Filter out any null values (notes that weren't found)
+            setPinnedNotes(pinnedNotesData.filter(Boolean))
+          }
         } else {
           setError('Topic not found')
         }
@@ -117,6 +152,12 @@ export default function TopicContent({ topicId, userId, onTopicDeleted }) {
     
     fetchTopic()
   }, [topicId, userId])
+
+  // Navigate to a user's profile
+  const navigateToUserProfile = (username) => {
+    if (!username) return
+    router.push(`/${username}`)
+  }
   
   const handleSaveContent = async () => {
     if (!isOwner) return
@@ -169,15 +210,37 @@ export default function TopicContent({ topicId, userId, onTopicDeleted }) {
   const handleDeleteTopic = async () => {
     if (!isOwner) return
     
-    console.log('Delete topic function called', topicId)
-    
-    // Simply call the parent component's delete function
+    // Call the parent component's delete function
     if (typeof onTopicDeleted === 'function') {
-      console.log('Calling parent onTopicDeleted function')
       onTopicDeleted(topicId)
     } else {
       console.error('No delete callback provided')
       alert('Could not delete topic. Please try again.')
+    }
+  }
+  
+  // Function to unpin a note from the topic
+  const handleUnpinNote = async (noteId) => {
+    if (!isOwner) return
+    
+    try {
+      // Remove the note ID from the topic's pinnedNoteIds array
+      const topicRef = doc(db, 'topics', topicId)
+      await updateDoc(topicRef, {
+        pinnedNoteIds: arrayRemove(noteId)
+      })
+      
+      // Update local state by removing the note from pinnedNotes
+      setPinnedNotes(prev => prev.filter(note => note.id !== noteId))
+      
+      // Update the note's isPinned status (if you're tracking this on the note)
+      const noteRef = doc(db, 'notes', noteId)
+      await updateDoc(noteRef, {
+        isPinned: false
+      })
+    } catch (error) {
+      console.error('Error unpinning note:', error)
+      alert('Failed to unpin note. Please try again.')
     }
   }
   
@@ -206,7 +269,8 @@ export default function TopicContent({ topicId, userId, onTopicDeleted }) {
         id: docRef.id,
         ...commentData,
         author: userData.displayName || currentUser.email.split('@')[0],
-        profilePic: userData.profilePic || null
+        profilePic: userData.profilePic || null,
+        authorId: currentUser.uid
       }
       
       setComments(prev => [...prev, newCommentWithAuthor])
@@ -219,32 +283,38 @@ export default function TopicContent({ topicId, userId, onTopicDeleted }) {
   
   const toggleBookmark = async () => {
     try {
-      const currentUser = auth.currentUser
-      if (!currentUser) return
+      const currentUser = auth.currentUser;
+      if (!currentUser) return;
       
-      const userDocRef = doc(db, 'users', currentUser.uid)
+      const userDocRef = doc(db, 'users', currentUser.uid);
       
       if (isBookmarked) {
         // Remove bookmark
         await updateDoc(userDocRef, {
           bookmarkedTopics: arrayRemove(topicId)
-        })
-        setBookmarkCount(prev => prev - 1)
+        });
+        setBookmarkCount(prev => prev - 1);
       } else {
         // Add bookmark
         await updateDoc(userDocRef, {
           bookmarkedTopics: arrayUnion(topicId)
-        })
-        setBookmarkCount(prev => prev + 1)
+        });
+        setBookmarkCount(prev => prev + 1);
       }
       
       // Update local state
-      setIsBookmarked(!isBookmarked)
+      setIsBookmarked(!isBookmarked);
+      
+      // Force a refresh of the bookmarked topics in the parent component
+      // We need to add this to the props from the parent component
+      if (typeof onBookmarkToggle === 'function') {
+        onBookmarkToggle(topicId, !isBookmarked);
+      }
     } catch (error) {
-      console.error('Error toggling bookmark:', error)
-      alert('Failed to update bookmark. Please try again.')
+      console.error('Error toggling bookmark:', error);
+      alert('Failed to update bookmark. Please try again.');
     }
-  }
+  };
   
   // Format dates for display
   const formatDate = (dateString) => {
@@ -314,7 +384,7 @@ export default function TopicContent({ topicId, userId, onTopicDeleted }) {
           </div>
           
           {/* Delete Topic Section */}
-          <div className="delete-topic-section" style={{ display: 'block' }}>
+          <div className="delete-topic-section">
             <h3>Danger Zone</h3>
             
             {showDeleteConfirm ? (
@@ -339,10 +409,7 @@ export default function TopicContent({ topicId, userId, onTopicDeleted }) {
               </div>
             ) : (
               <button 
-                onClick={() => {
-                  console.log('Delete button clicked');
-                  setShowDeleteConfirm(true);
-                }}
+                onClick={() => setShowDeleteConfirm(true)}
                 className="delete-topic-button"
                 type="button"
               >
@@ -418,7 +485,19 @@ export default function TopicContent({ topicId, userId, onTopicDeleted }) {
                 <div className="topic-metadata">
                   {topicOwner && (
                     <div className="topic-owner">
-                      Created by: <span className="owner-name">{topicOwner.displayName}</span>
+                      Created by: {' '}
+                      <span 
+                        className="owner-name clickable"
+                        onClick={() => navigateToUserProfile(topicOwner.displayName)}
+                        style={{ 
+                          cursor: 'pointer', 
+                          color: '#2563eb',
+                          textDecoration: 'underline',
+                          fontWeight: '500'
+                        }}
+                      >
+                        {topicOwner.displayName}
+                      </span>
                     </div>
                   )}
                   
@@ -438,6 +517,62 @@ export default function TopicContent({ topicId, userId, onTopicDeleted }) {
                   </div>
                 </div>
               </div>
+            </div>
+            
+            {/* Pinned Notes Section */}
+            <div className="pinned-notes-section">
+              <h3 className="section-title">Pinned Resources</h3>
+              
+              {pinnedNotes.length > 0 ? (
+                <div className="pinned-notes-grid">
+                  {pinnedNotes.map(note => (
+                    <div key={note.id} className="pinned-note-card">
+                      <div className="pinned-note-content">
+                        <div className="pinned-note-header">
+                          <div className="note-author-info">
+                            {note.profilePic ? (
+                              <img 
+                                src={note.profilePic} 
+                                alt={`${note.author}'s avatar`}
+                                className="avatar-small"
+                              />
+                            ) : (
+                              <div className="avatar-placeholder-small">
+                                {note.author ? note.author.charAt(0).toUpperCase() : '?'}
+                              </div>
+                            )}
+                            <span className="note-author-name">{note.author}</span>
+                          </div>
+                          
+                          {isOwner && (
+                            <button 
+                              className="unpin-button"
+                              onClick={() => handleUnpinNote(note.id)}
+                              title="Unpin this note"
+                            >
+                              📌
+                            </button>
+                          )}
+                        </div>
+                        
+                        <p className="pinned-note-text">{note.content}</p>
+                        
+                        <div className="pinned-note-footer">
+                          <span className="pinned-date">{formatDate(note.timestamp)}</span>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="empty-pinned-notes">
+                  {isOwner ? (
+                    <p>No pinned resources yet. Pin notes related to this topic to keep important information easily accessible.</p>
+                  ) : (
+                    <p>No pinned resources for this topic yet.</p>
+                  )}
+                </div>
+              )}
             </div>
             
             {/* Content Section */}
@@ -496,7 +631,7 @@ export default function TopicContent({ topicId, userId, onTopicDeleted }) {
         )}
       </div>
       
-      {/* Separate Comments Section with transparent background */}
+      {/* Comments Section Wrapper */}
       <div className="comments-section-wrapper">
         <div className="comments-section">
           <h3 className="comments-title">Comments</h3>
@@ -530,13 +665,29 @@ export default function TopicContent({ topicId, userId, onTopicDeleted }) {
                               src={comment.profilePic} 
                               alt={`${comment.author}'s avatar`}
                               className="comment-avatar"
+                              onClick={() => navigateToUserProfile(comment.authorId)}
+                              style={{ cursor: 'pointer' }}
                             />
                           ) : (
-                            <div className="comment-avatar-placeholder">
+                            <div 
+                              className="comment-avatar-placeholder"
+                              onClick={() => navigateToUserProfile(comment.authorId)}
+                              style={{ cursor: 'pointer' }}
+                            >
                               {comment.author ? comment.author.charAt(0).toUpperCase() : '?'}
                             </div>
                           )}
-                          <span className="author-name">{comment.author || 'Anonymous'}</span>
+                          <span 
+                            className="author-name clickable"
+                            onClick={() => navigateToUserProfile(comment.authorId)}
+                            style={{ 
+                              cursor: 'pointer', 
+                              color: '#2563eb',
+                              textDecoration: 'underline'
+                            }}
+                          >
+                            {comment.author || 'Anonymous'}
+                          </span>
                         </div>
                         <span className="comment-date">
                           {new Date(comment.createdAt).toLocaleDateString()}

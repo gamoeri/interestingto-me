@@ -1,0 +1,105 @@
+/* Bookmarks Page Styles */
+.bookmarks-page {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 20px;
+  }
+  
+  .bookmarks-header {
+    margin-bottom: 24px;
+    border-bottom: 1px solid #e5e7eb;
+    padding-bottom: 16px;
+  }
+  
+  .bookmarks-header h2 {
+    margin: 0 0 8px 0;
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: #111827;
+  }
+  
+  .bookmarks-count {
+    font-size: 0.9rem;
+    color: #6b7280;
+    margin: 0;
+  }
+  
+  .bookmarks-list {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+  
+  .bookmark-item {
+    background-color: white;
+    border-radius: 8px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    padding: 16px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: 1px solid #f3f4f6;
+  }
+  
+  .bookmark-item:hover {
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    transform: translateY(-2px);
+    border-color: #e5e7eb;
+  }
+  
+  .bookmark-content {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  
+  .bookmark-title {
+    margin: 0;
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #1e40af;
+  }
+  
+  .bookmark-meta {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    font-size: 0.8rem;
+    color: #6b7280;
+  }
+  
+  .bookmark-author {
+    font-weight: 500;
+  }
+  
+  .bookmark-date {
+    font-style: italic;
+  }
+  
+  .bookmark-preview {
+    margin: 8px 0 0 0;
+    font-size: 0.9rem;
+    color: #4b5563;
+    line-height: 1.5;
+  }
+  
+  .empty-bookmarks {
+    background-color: white;
+    border-radius: 8px;
+    padding: 32px;
+    text-align: center;
+    color: #6b7280;
+    border: 1px dashed #d1d5db;
+  }
+  
+  .empty-bookmarks p:first-child {
+    font-weight: 500;
+    font-size: 1.1rem;
+    margin-bottom: 8px;
+    color: #4b5563;
+  }
+  
+  .empty-bookmarks p:last-child {
+    font-size: 0.9rem;
+    max-width: 400px;
+    margin: 0 auto;
+  }

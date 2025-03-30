@@ -69,8 +69,8 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    font-size: 1rem;
-    font-weight: 400;
+    font-size: 0.8rem;
+    font-weight: 600;
     margin-bottom: 0rem;
     margin-top: 0.5rem;
     color:#68717e;
@@ -370,3 +370,48 @@
     padding: 4px 0;
     /* We'll position this with JS */
   }
+
+  /* Add these styles to your navpanel.css file */
+
+/* Profile Nav Card - styled for the top of the navigation */
+.profile-nav-card {
+  background-color: white;
+  border-radius: 10px;
+  padding: 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin-bottom: 8px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+  border: 1px solid #f0f0f0;
+}
+
+.profile-nav-card:hover {
+  background-color: #f9fafb;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.08);
+}
+
+.profile-nav-card.profile-card-active {
+  background-color: rgba(59, 130, 246, 0.08);
+  border-color: rgba(59, 130, 246, 0.2);
+}
+
+.nav-item-empty {
+  color: #9ca3af;
+  padding: 10px 12px;
+  font-style: italic;
+  font-size: 0.9rem;
+}
+
+/* Custom styles for empty state */
+.nav-list:empty::after {
+  content: "No topics yet";
+  display: block;
+  padding: 12px;
+  color: #9ca3af;
+  font-style: italic;
+  font-size: 0.9rem;
+}
