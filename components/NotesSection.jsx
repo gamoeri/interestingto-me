@@ -1,17 +1,22 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, memo, useRef } from 'react'
 import ProfileEdit from './ProfileEdit'
+import useNotes from '@/hooks/useNotes.tsx'
 
-export default function NotesSection({ 
+export default memo(function NotesSection({ 
   notes = [], 
   topics = [],
   userProfile,
+  user,
   onAddNote,
   onDeleteNote,
   onSelectNote,
-  onPinNoteToTopic,
+  onAddReply,
+  onToggleLike,
   activeNoteId,
+  viewMode = 'feed',
+  onBackToFeed,
   displayName,
   profilePic,
   onUpdateDisplayName,
@@ -19,226 +24,137 @@ export default function NotesSection({
   onUpdateProfilePic,
   onUpdateBannerImage,
   onUpdateBackgroundColor,
+  onChangeNoteTopic, // New prop for changing a note's topic
   bannerImage = userProfile?.bannerImage || '/default-banner.jpg',
   backgroundColor = userProfile?.backgroundColor || '#f8f8f8'
 }) {
+  
+  console.log("NotesSection rendering", { viewMode, activeNoteId });
+
+
   const [newNote, setNewNote] = useState('')
-  const [noteTopics, setNoteTopics] = useState([]) // Selected topics for the new note
   const [showProfileEdit, setShowProfileEdit] = useState(false)
   const [activeTopicFilter, setActiveTopicFilter] = useState('all')
-  const [showPinMenu, setShowPinMenu] = useState(null) // For pin dropdown menu
-  const [mentionQuery, setMentionQuery] = useState('') // For @ mentions
-  const [showMentionMenu, setShowMentionMenu] = useState(false)
-  const [cursorPosition, setCursorPosition] = useState(0)
+  const [replyContent, setReplyContent] = useState('')
+  const [showTopicDropdown, setShowTopicDropdown] = useState(null) // For storing ID of note with open dropdown
+  const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0 }) // Store position for dropdown
+  const [dropdownType, setDropdownType] = useState('banner') // 'banner' or 'header'
   
   const textareaRef = useRef(null)
-  const mentionMenuRef = useRef(null)
+  const dropdownRef = useRef(null)
   
-  // Calculate note and topic counts
   const noteCount = notes.length;
   const uniqueTopicsUsed = new Set(
     notes.flatMap(note => note.topicIds || [])
   ).size;
   
-  // Handle clicking outside menus to close them
+  // Close dropdown when clicking outside
   useEffect(() => {
-    const handleClickOutside = (e) => {
-      if (showMentionMenu && mentionMenuRef.current && !mentionMenuRef.current.contains(e.target)) {
-        setShowMentionMenu(false);
-      }
-      
-      if (showPinMenu && !e.target.closest('.pin-menu-container')) {
-        setShowPinMenu(null);
-      }
-    };
-    
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, [showMentionMenu, showPinMenu]);
-  
-  // When active topic filter changes, add it to selected topics for new posts
-  useEffect(() => {
-    if (activeTopicFilter !== 'all') {
-      // If a specific topic is selected in the filter
-      const topic = topics.find(t => t.id === activeTopicFilter);
-      if (topic && !noteTopics.find(t => t.id === activeTopicFilter)) {
-        setNoteTopics(prev => [...prev, topic]);
+    function handleClickOutside(event) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setShowTopicDropdown(null);
       }
     }
-  }, [activeTopicFilter, topics]);
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
   
-  // Handle text input changes and detect @ mentions
   const handleNoteChange = (e) => {
     const value = e.target.value;
     setNewNote(value);
-    
-    // Store cursor position
-    setCursorPosition(e.target.selectionStart);
-    
-    // Check for @ mentions
-    const cursorPos = e.target.selectionStart;
-    const textBeforeCursor = value.substring(0, cursorPos);
-    const atSymbolIndex = textBeforeCursor.lastIndexOf('@');
-    
-    if (atSymbolIndex !== -1 && (atSymbolIndex === 0 || textBeforeCursor[atSymbolIndex - 1] === ' ')) {
-      // Extract the query text between @ and cursor
-      const query = textBeforeCursor.substring(atSymbolIndex + 1);
-      
-      // Check if query is valid and not containing spaces (i.e., we're still typing a mention)
-      if (query.length > 0 && !query.includes(' ')) {
-        setMentionQuery(query);
-        setShowMentionMenu(true);
-      } else {
-        setShowMentionMenu(false);
-      }
-    } else {
-      setShowMentionMenu(false);
-    }
   };
   
-  // Position the mention menu at the cursor location
-  useEffect(() => {
-    if (showMentionMenu && textareaRef.current && mentionMenuRef.current) {
-      // Get cursor coordinates
-      const cursorPos = getCursorCoordinates(textareaRef.current, cursorPosition);
-      
-      if (cursorPos) {
-        // Position the menu below and aligned with the cursor
-        mentionMenuRef.current.style.top = `${cursorPos.top + 20}px`;
-        mentionMenuRef.current.style.left = `${cursorPos.left}px`;
-      }
-    }
-  }, [showMentionMenu, cursorPosition]);
-  
-  // Get cursor coordinates in the textarea
-  const getCursorCoordinates = (textarea, position) => {
-    if (!textarea) return null;
-    
-    // Create a hidden div with the same styling as the textarea
-    const div = document.createElement('div');
-    
-    // Copy all computed styles from textarea to div
-    const styles = window.getComputedStyle(textarea);
-    Array.from(styles).forEach(style => {
-      div.style[style] = styles.getPropertyValue(style);
-    });
-    
-    // Set content and special styles for div
-    div.style.position = 'absolute';
-    div.style.top = '0';
-    div.style.left = '0';
-    div.style.visibility = 'hidden';
-    div.style.overflow = 'auto';
-    div.style.whiteSpace = 'pre-wrap';
-    
-    // Text up to position with a span at the end
-    const text = textarea.value.substring(0, position);
-    div.textContent = text;
-    const span = document.createElement('span');
-    span.textContent = '|'; // Represents cursor
-    div.appendChild(span);
-    
-    // Append to body, measure, and remove
-    document.body.appendChild(div);
-    const rect = span.getBoundingClientRect();
-    const textareaRect = textarea.getBoundingClientRect();
-    document.body.removeChild(div);
-    
-    return {
-      top: rect.top - textareaRect.top + textarea.scrollTop,
-      left: rect.left - textareaRect.left
-    };
-  };
-  
-  // Select a topic from the mention menu
-  const selectTopic = (topic) => {
-    // Close the mention menu
-    setShowMentionMenu(false);
-    
-    // Add the topic to selected topics if not already there
-    if (!noteTopics.find(t => t.id === topic.id)) {
-      setNoteTopics(prev => [...prev, topic]);
-    }
-    
-    // Update the text - replace @query with empty space
-    if (textareaRef.current) {
-      const text = newNote;
-      const cursorPos = cursorPosition;
-      const atSymbolIndex = text.substring(0, cursorPos).lastIndexOf('@');
-      
-      if (atSymbolIndex !== -1) {
-        const newText = text.substring(0, atSymbolIndex) + text.substring(cursorPos);
-        setNewNote(newText);
-        
-        // Set cursor position
-        setTimeout(() => {
-          if (textareaRef.current) {
-            textareaRef.current.focus();
-            textareaRef.current.selectionStart = atSymbolIndex;
-            textareaRef.current.selectionEnd = atSymbolIndex;
-          }
-        }, 0);
-      }
-    }
-  };
-  
-  // Remove a topic from selection
-  const removeTopic = (topicId) => {
-    setNoteTopics(prev => prev.filter(topic => topic.id !== topicId));
-  };
-  
-  // Filter topics based on mention query
-  const filteredTopics = mentionQuery 
-    ? topics.filter(topic => topic.name.toLowerCase().includes(mentionQuery.toLowerCase()))
-    : topics;
-  
-  // Handle adding a note with topics
   const handleAddNote = () => {
     if (newNote.trim() && newNote.length <= 280) {
-      // Convert selected topics to an array of IDs
-      const topicIds = noteTopics.map(topic => topic.id);
-      
-      // Add the note with topics
+      const topicIds = activeTopicFilter !== 'all' ? [activeTopicFilter] : [];
       onAddNote(newNote, topicIds);
-      
-      // Reset the form
       setNewNote('');
-      // Only clear topics if not filtering by a specific topic
-      if (activeTopicFilter === 'all') {
-        setNoteTopics([]);
-      } else {
-        // Keep only the active filter topic
-        setNoteTopics(prev => prev.filter(topic => topic.id === activeTopicFilter));
-      }
+    }
+  };
+
+  const handleReplySubmit = () => {
+    if (replyContent.trim() && replyContent.length <= 280 && activeNoteId) {
+      onAddReply(activeNoteId, replyContent, {
+        displayName,
+        profilePic
+      });
+      setReplyContent('');
     }
   };
   
-  // Function to pin a note to a topic
-  const handlePinNote = (noteId, topicId) => {
-    if (onPinNoteToTopic) {
-      onPinNoteToTopic(noteId, topicId);
-      setShowPinMenu(null); // Close pin menu after pinning
+  const handleBackToFeedClick = () => {
+    if (onBackToFeed) {
+      onBackToFeed();
+    } else {
+      onSelectNote(null);
     }
   };
   
-  // Filter notes based on active topic
+  const handleLikeToggle = (noteId) => {
+    if (onToggleLike) {
+      onToggleLike(noteId);
+    }
+  };
+
+  // New function to handle changing a note's topic
+  const handleChangeNoteTopic = (noteId, topicId) => {
+    if (onChangeNoteTopic) {
+      onChangeNoteTopic(noteId, topicId);
+      setShowTopicDropdown(null); // Close dropdown after selection
+    }
+  };
+  
+  // Toggle topic dropdown for a specific note
+  // Toggle topic dropdown for a specific note
+  const toggleTopicDropdown = (noteId, e, type = 'inline') => {
+  // Stop event propagation to prevent immediate closing
+  if (e) {
+    e.stopPropagation();
+  }
+  
+  // If opening dropdown, calculate position
+  if (showTopicDropdown !== noteId) {
+    const rect = e.currentTarget.getBoundingClientRect();
+    
+    // Different positioning based on dropdown type
+    if (type === 'banner') {
+      // Position below the banner kebab button
+      setDropdownPosition({
+        top: rect.bottom + window.scrollY,
+        left: rect.right - 160, // Align right edge with button
+      });
+    } else if (type === 'header' || type === 'inline') {
+      // Position below the badge or "Add a badge" text
+      setDropdownPosition({
+        top: rect.bottom + window.scrollY + 4, // Add a bit of space
+        left: rect.left, // Align left edge with the badge
+      });
+    }
+    
+    setDropdownType(type);
+  }
+  
+  setShowTopicDropdown(showTopicDropdown === noteId ? null : noteId);
+};
+  
   const filteredNotes = activeTopicFilter === 'all'
     ? notes
     : notes.filter(note => {
-        // Check if the note has topicIds array (new format)
         if (note.topicIds && Array.isArray(note.topicIds)) {
           return note.topicIds.includes(activeTopicFilter);
         }
-        // Also check for the old topicId format for backward compatibility
         else if (note.topicId) {
+          if (typeof note.topicId === 'string' && note.topicId.includes(',')) {
+            const topicIdArray = note.topicId.split(',');
+            return topicIdArray.includes(activeTopicFilter);
+          }
           return note.topicId === activeTopicFilter;
         }
         return false;
       });
-  
-  // If profile edit is showing, return the ProfileEdit component
+
   if (showProfileEdit) {
     return (
       <ProfileEdit 
@@ -253,284 +169,473 @@ export default function NotesSection({
     );
   }
   
+  // Find active note for reply view
+  const activeNote = activeNoteId ? notes.find(note => note.id === activeNoteId) : null;
+  
   return (
     <div className="notes-section-redesigned">
       {/* Profile Banner */}
-      <div className="profile-banner" style={{ backgroundImage: `url(${bannerImage})` }}>
-        <div className="profile-info-container">
-          <div className="profile-pic-container">
-            {profilePic ? (
-              <img 
-                src={profilePic} 
-                alt={`${displayName}'s profile`}
-                className="profile-pic"
-              />
-            ) : (
-              <div className="profile-pic-placeholder">
-                {displayName ? displayName.charAt(0).toUpperCase() : '?'}
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
-      
-      {/* Profile Info */}
-      <div className="profile-details">
-        <div className="profile-info-main">
-          <div>
-            <h2 className="profile-name">{displayName || 'User'}</h2>
-            <p className="profile-bio">
-              {userProfile?.bio || "Learning and sharing my journey. Taking notes on everything that inspires me."}
-            </p>
-          </div>
-          <button 
-            className="edit-profile-button"
-            onClick={() => setShowProfileEdit(true)}
-          >
-            Edit Profile
-          </button>
-        </div>
-      </div>
-      
-      {/* Topic Tabs Navigation */}
-      <div className="topic-tabs-container">
-        <div className="topic-tabs-wrap">
-          <button 
-            className={`topic-tab ${activeTopicFilter === 'all' ? 'active-tab' : ''}`}
-            onClick={() => setActiveTopicFilter('all')}
-          >
-            All Notes
-          </button>
-          
-          {topics.map(topic => (
-            <button
-              key={topic.id}
-              className={`topic-tab ${activeTopicFilter === topic.id ? 'active-tab' : ''}`}
-              onClick={() => setActiveTopicFilter(topic.id)}
-            >
-              {topic.name}
-            </button>
-          ))}
-        </div>
-      </div>
-      
-      {/* New Note Input */}
-      <div className="new-note-input">
-        <div className="input-container">
-          {/* Topic badges that are selected */}
-          {noteTopics.length > 0 && (
-            <div className="selected-topics-display">
-              <div className="topic-badges-container">
-                {noteTopics.map(topic => (
-                  <span key={topic.id} className="topic-badge-large">
-                    <span className="topic-badge-prefix">@</span>
-                    {topic.name}
-                    <button 
-                      className="remove-topic-badge"
-                      onClick={() => removeTopic(topic.id)}
-                    >
-                      ×
-                    </button>
-                  </span>
-                ))}
-              </div>
-            </div>
-          )}
-          
-          {/* Text input */}
-          <textarea
-            ref={textareaRef}
-            value={newNote}
-            onChange={handleNoteChange}
-            placeholder="What are you learning about today? Type @ to tag a topic"
-            className="note-input"
-          />
-          
-          {/* Mention menu */}
-          {showMentionMenu && (
-            <div 
-              ref={mentionMenuRef}
-              className="mention-menu"
-            >
-              {filteredTopics.length > 0 ? (
-                filteredTopics.map(topic => (
-                  <div 
-                    key={topic.id}
-                    className="mention-item"
-                    onClick={() => selectTopic(topic)}
-                  >
-                    <span className="mention-prefix">@</span>
-                    {topic.name}
+      {viewMode === 'feed' && (
+          <>
+          <div className="profile-banner" style={{ backgroundImage: `url(${bannerImage})` }}>
+            <div className="profile-info-container">
+              <div className="profile-pic-container">
+                {profilePic ? (
+                  <img 
+                    src={profilePic} 
+                    alt={`${displayName}'s profile`}
+                    className="profile-pic"
+                  />
+                ) : (
+                  <div className="profile-pic-placeholder">
+                    {displayName ? displayName.charAt(0).toUpperCase() : '?'}
                   </div>
-                ))
-              ) : (
-                <div className="mention-no-results">No matching topics</div>
-              )}
+                )}
+              </div>
             </div>
-          )}
-          
-          <div className="input-actions">
-            <div className="input-info">
-              <span className="mention-hint">Type @ to mention a topic</span>
-              <span className="char-count">{newNote.length}/280</span>
-            </div>
-            
-            <button 
-              onClick={handleAddNote}
-              disabled={newNote.length > 280 || newNote.length === 0}
-              className="post-button"
-            >
-              Post
-            </button>
           </div>
-        </div>
-      </div>
-      
-      {/* Notes Timeline */}
-      <div className="notes-timeline">
-        {filteredNotes.length > 0 ? (
-          <div className="timeline-entries">
-            {filteredNotes
-              .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
-              .map((note) => {
-                // Process topics for this note
-                const noteTopics = [];
+          
+          {/* Profile Info */}
+          <div className="profile-details">
+            <div className="profile-info-main">
+              <div>
+                <h2 className="profile-name">{displayName || 'User'}</h2>
+                <p className="profile-bio">
+                  {userProfile?.bio || "Learning and sharing my journey. Taking notes on everything that inspires me."}
+                </p>
+              </div>
+              <button 
+                className="edit-profile-button"
+                onClick={() => setShowProfileEdit(true)}
+              >
+                Edit Profile
+              </button>
+            </div>
+          </div>
+          
+          {/* Topic Tabs Navigation */}
+          <div className="topic-tabs-container">
+            <div className="topic-tabs-wrap">
+              <button 
+                className={`topic-tab ${activeTopicFilter === 'all' ? 'active-tab' : ''}`}
+                onClick={() => setActiveTopicFilter('all')}
+              >
+                All Notes
+              </button>
+              
+              {topics.map(topic => (
+                <button
+                  key={topic.id}
+                  className={`topic-tab ${activeTopicFilter === topic.id ? 'active-tab' : ''}`}
+                  onClick={() => setActiveTopicFilter(topic.id)}
+                >
+                  {topic.name}
+                </button>
+              ))}
+            </div>
+          </div>
+          
+          {/* New Note Input */}
+          <div className="new-note-input">
+            <div className="input-container">
+              {activeTopicFilter !== 'all' && (
+                <div className="selected-topic-indicator">
+                  Creating note in: <span className="topic-name">
+                    {topics.find(t => t.id === activeTopicFilter)?.name || 'Selected Topic'}
+                  </span>
+                </div>
+              )}
+              
+              <textarea
+                ref={textareaRef}
+                value={newNote}
+                onChange={handleNoteChange}
+                placeholder={activeTopicFilter === 'all' 
+                  ? "What are you learning about today?" 
+                  : `Write a note about ${topics.find(t => t.id === activeTopicFilter)?.name || 'this topic'}...`}
+                className="note-input"
+              />
+              
+              <div className="input-actions">
+                <div className="input-info">
+                  <span className="char-count">{newNote.length}/280</span>
+                </div>
                 
-                // Handle new format (topicIds array)
-                if (note.topicIds && Array.isArray(note.topicIds)) {
-                  note.topicIds.forEach(topicId => {
+                <button 
+                  onClick={handleAddNote}
+                  disabled={newNote.length > 280 || newNote.length === 0}
+                  className="post-button"
+                >
+                  Post
+                </button>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
+      
+      {/* Topic Dropdown Portal (rendered at document level) */}
+      {showTopicDropdown && (
+        <div 
+          className="topic-dropdown-portal"
+          style={{
+            position: 'fixed',
+            top: `${dropdownPosition.top}px`,
+            left: `${dropdownPosition.left}px`,
+            zIndex: 1000,
+          }}
+          ref={dropdownRef}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div className="topic-change-dropdown">
+            <div className="dropdown-header">
+              {dropdownType === 'header' ? 'Add Topic' : 'Change Topic'}
+            </div>
+            {topics.map(topic => {
+              // Only check for active state if it's a change operation (not adding new)
+              const activeNote = notes.find(n => n.id === showTopicDropdown);
+              const noteTopics = [];
+              
+              if (activeNote) {
+                if (activeNote.topicIds && Array.isArray(activeNote.topicIds)) {
+                  activeNote.topicIds.forEach(topicId => {
                     const topic = topics.find(t => t.id === topicId);
                     if (topic) noteTopics.push(topic);
                   });
                 } 
-                // Handle old format (single topicId)
-                else if (note.topicId) {
-                  const topic = topics.find(t => t.id === note.topicId);
-                  if (topic) noteTopics.push(topic);
+                else if (activeNote.topicId) {
+                  if (typeof activeNote.topicId === 'string' && activeNote.topicId.includes(',')) {
+                    const topicIdArray = activeNote.topicId.split(',');
+                    topicIdArray.forEach(topicId => {
+                      const topic = topics.find(t => t.id === topicId);
+                      if (topic) noteTopics.push(topic);
+                    });
+                  } else {
+                    const topic = topics.find(t => t.id === activeNote.topicId);
+                    if (topic) noteTopics.push(topic);
+                  }
                 }
-                
-                const formattedDate = new Date(note.timestamp).toLocaleString(undefined, {
-                  month: 'short',
-                  day: 'numeric',
-                  hour: '2-digit',
-                  minute: '2-digit'
-                });
-                
-                return (
-                  <div 
-                    key={note.id} 
-                    className={`timeline-entry ${activeNoteId === note.id ? 'entry-active' : ''}`}
-                  >
-                    <div className="entry-avatar">
-                      {note.profilePic ? (
-                        <img 
-                          src={note.profilePic} 
-                          alt={`${note.author}'s avatar`}
-                          className="avatar-image"
-                        />
-                      ) : (
-                        <div className="avatar-placeholder">
-                          {note.author ? note.author.charAt(0).toUpperCase() : '?'}
-                        </div>
-                      )}
-                    </div>
-                    <div className="entry-content">
-                      <div className="entry-header">
-                        <div className="author-info">
-                          <span className="entry-author">{note.author}</span>
-                        </div>
-                        <span className="entry-time">{formattedDate}</span>
-                      </div>
-                      
-                      <p className="entry-text">{note.content}</p>
-                      
-                      {/* Topic badges */}
-                      {noteTopics.length > 0 && (
-                        <div className="note-topics">
-                          {noteTopics.map(topic => (
-                            <span 
-                              key={topic.id} 
-                              className="topic-badge"
-                              onClick={() => setActiveTopicFilter(topic.id)}
-                            >
-                              <span className="topic-badge-prefix">@</span>
-                              {topic.name}
-                            </span>
-                          ))}
-                        </div>
-                      )}
-                      
-                      <div className="entry-actions">
-                        <button 
-                          className="reply-action"
-                          onClick={() => onSelectNote(note.id === activeNoteId ? null : note.id)}
-                        >
-                          {(note.replies?.length || 0) > 0 ? `${note.replies.length} ${note.replies.length === 1 ? 'Reply' : 'Replies'}` : 'Reply'}
-                        </button>
-                        
-                        {/* Pin to Topic button - only show if note has topics */}
+              }
+              
+              const isActive = noteTopics.some(t => t.id === topic.id);
+              
+              return (
+                <div 
+                  key={topic.id}
+                  className={`dropdown-item ${isActive ? 'active-topic' : ''}`}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleChangeNoteTopic(showTopicDropdown, topic.id);
+                  }}
+                >
+                  {topic.name}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+      
+      {/* Conditionally render either Notes Timeline or Reply View */}
+      {viewMode === 'feed' ? (
+        /* Notes Timeline */
+        <div className="notes-timeline">
+          {filteredNotes.length > 0 ? (
+            <div className="timeline-entries">
+              {filteredNotes
+                .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
+                .map((note, index) => {
+                  const noteTopics = [];
+                  
+                  if (note.topicIds && Array.isArray(note.topicIds)) {
+                    note.topicIds.forEach(topicId => {
+                      const topic = topics.find(t => t.id === topicId);
+                      if (topic) noteTopics.push(topic);
+                    });
+                  } 
+                  else if (note.topicId) {
+                    if (typeof note.topicId === 'string' && note.topicId.includes(',')) {
+                      const topicIdArray = note.topicId.split(',');
+                      topicIdArray.forEach(topicId => {
+                        const topic = topics.find(t => t.id === topicId);
+                        if (topic) noteTopics.push(topic);
+                      });
+                    } else {
+                      const topic = topics.find(t => t.id === note.topicId);
+                      if (topic) noteTopics.push(topic);
+                    }
+                  }
+                  
+                  const formattedDate = new Date(note.timestamp).toLocaleString(undefined, {
+                    month: 'short',
+                    day: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                  });
+                  
+                  // Determine if note is liked by current user
+                  const likes = note.likes || [];
+                  const isLiked = user ? likes.includes(user.uid) : false;
+                  const likeCount = likes.length;
+                  
+                  return (
+                    <div 
+                      key={`${note.id}-${index}`} 
+                      className={`timeline-entry ${activeNoteId === note.id ? 'entry-active' : ''}`}
+                    >
+                      <div className="entry-content-container">
+                        {/* Topic banner - only show if there are topics */}
                         {noteTopics.length > 0 && (
-                          <div className="pin-action-container">
-                            <button 
-                              className={`pin-action ${note.isPinned ? 'is-pinned' : ''}`}
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                // If multiple topics, show dropdown to select which one to pin to
-                                if (noteTopics.length > 1) {
-                                  setShowPinMenu(note.id);
-                                } else {
-                                  // If only one topic, pin directly
-                                  handlePinNote(note.id, noteTopics[0].id);
-                                }
-                              }}
-                            >
-                              {note.isPinned ? "Pinned" : "Pin"}
-                            </button>
+                          <div className="note-topic-banner">
+                            <div className="topic-badges">
+                              {noteTopics.map(topic => (
+                                <span 
+                                  key={topic.id} 
+                                  className="topic-banner-badge"
+                                  onClick={() => setActiveTopicFilter(topic.id)}
+                                >
+                                  <span className="topic-badge-prefix">3FK</span>
+                                  {topic.name}
+                                </span>
+                              ))}
+                            </div>
                             
-                            {/* Pin menu dropdown */}
-                            {showPinMenu === note.id && (
-                              <div className="pin-menu-container">
-                                <div className="pin-dropdown-menu">
-                                  <div className="pin-dropdown-title">Pin to:</div>
-                                  {noteTopics.map(topic => (
-                                    <div 
-                                      key={topic.id}
-                                      className="pin-dropdown-item"
-                                      onClick={() => handlePinNote(note.id, topic.id)}
-                                    >
-                                      {topic.name}
-                                    </div>
-                                  ))}
-                                </div>
+                            {/* Topic change dropdown icon */}
+                            <button 
+                              className="change-topic-button"
+                              onClick={(e) => toggleTopicDropdown(note.id, e, 'banner')}
+                              title="Change topic"
+                            >
+                              ⋮
+                            </button>
+                          </div>
+                        )}
+
+                        {/* Main content */}
+                        <div className="note-main-content">
+                          <div className="entry-avatar">
+                            {note.profilePic ? (
+                              <img 
+                                src={note.profilePic} 
+                                alt={`${note.author}'s avatar`}
+                                className="avatar-image"
+                              />
+                            ) : (
+                              <div className="avatar-placeholder">
+                                {note.author ? note.author.charAt(0).toUpperCase() : '?'}
                               </div>
                             )}
                           </div>
-                        )}
-                        
-                        <button 
-                          className="delete-action"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            if (window.confirm('Delete this note?')) {
-                              onDeleteNote(note.id);
-                            }
-                          }}
-                          title="Delete note"
-                        >
-                          Delete
-                        </button>
+                          <div className="entry-details">
+                            <div className="entry-header">
+                              <div className="author-info">
+                                <span className="entry-author">{note.author}</span>
+                                {/* "Add a badge" text for notes without topics */}
+                                {noteTopics.length > 0 ? (
+                                    noteTopics.map(topic => (
+                                      <span 
+                                        key={topic.id} 
+                                        className="inline-topic-badge"
+                                        onClick={(e) => toggleTopicDropdown(note.id, e, 'inline')}
+                                      >
+                                        <span className="topic-badge-prefix"></span>
+                                        {topic.name}
+                                      </span>
+                                    ))
+                                  ) : (
+                                    <button 
+                                      className="add-badge-link"
+                                      onClick={(e) => toggleTopicDropdown(note.id, e, 'inline')}
+                                      title="Change topic" // Add the title attribute here
+                                    >
+                                      Add a badge
+                                    </button>
+                                  )}
+                              </div>
+                              <span className="entry-time">{formattedDate}</span>
+                            </div>
+                            <p className="entry-text">{note.content}</p>
+                            <div className="entry-actions">
+                              {/* Like button */}
+                              {onToggleLike && (
+                                <button 
+                                  className={`like-action ${isLiked ? 'is-liked' : ''}`}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleLikeToggle(note.id);
+                                  }}
+                                >
+                                  {likeCount > 0 ? `${likeCount} ${likeCount === 1 ? 'Like' : 'Likes'}` : 'Like'}
+                                </button>
+                              )}
+                              
+                              {/* Reply button */}
+                              <button 
+                                className="reply-action"
+                                onClick={() => onSelectNote(note.id)}
+                              >
+                                {(note.replies?.length || 0) > 0 ? `${note.replies.length} ${note.replies.length === 1 ? 'Reply' : 'Replies'}` : 'Reply'}
+                              </button>
+                              
+                              {/* Delete button */}
+                              <button 
+                                className="delete-action"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  if (window.confirm('Delete this note?')) {
+                                    onDeleteNote(note.id);
+                                  }
+                                }}
+                                title="Delete note"
+                              >
+                                Delete
+                              </button>
+                            </div>
+                          </div>
+                        </div>
                       </div>
                     </div>
+                  );
+                })}
+            </div>
+          ) : (
+            <div className="empty-timeline">
+              <p>No notes yet. Share what you're learning!</p>
+            </div>
+          )}
+        </div>
+      ) : (
+        /* Reply View - updated to match RepliesPanel structure */
+        <div className="replies-panel">
+          {activeNote && (
+            <>
+              <div className="replies-header">
+                <button 
+                  className="back-to-feed-button"
+                  onClick={handleBackToFeedClick}
+                >
+                  ← Back to Notes
+                </button>
+                <h3 className="replies-title">Conversation</h3>
+              </div>
+              
+              {/* Original Note */}
+              <div className="original-note-container">
+                <div className="note-main-content">
+                  <div className="entry-avatar">
+                    {activeNote.profilePic ? (
+                      <img 
+                        src={activeNote.profilePic} 
+                        alt={`${activeNote.author}'s avatar`}
+                        className="avatar-image"
+                      />
+                    ) : (
+                      <div className="avatar-placeholder">
+                        {activeNote.author ? activeNote.author.charAt(0).toUpperCase() : '?'}
+                      </div>
+                    )}
                   </div>
-                );
-              })}
-          </div>
-        ) : (
-          <div className="empty-timeline">
-            <p>No notes yet. Share what you're learning!</p>
-          </div>
-        )}
-      </div>
+                  <div className="entry-details">
+                    <div className="entry-header">
+                      <span className="entry-author">{activeNote.author}</span>
+                      <span className="entry-time">
+                        {new Date(activeNote.timestamp).toLocaleString(undefined, {
+                          month: 'short',
+                          day: 'numeric',
+                          hour: '2-digit',
+                          minute: '2-digit'
+                        })}
+                      </span>
+                    </div>
+                    <p className="entry-text">{activeNote.content}</p>
+                    
+                    {/* Add like button for original note */}
+                    {onToggleLike && (
+                      <div className="entry-actions">
+                        <button 
+                          className={`like-action ${activeNote.likes?.includes(user?.uid) ? 'is-liked' : ''}`}
+                          onClick={() => handleLikeToggle(activeNote.id)}
+                        >
+                          {(activeNote.likes?.length || 0) > 0 ? `${activeNote.likes.length} ${activeNote.likes.length === 1 ? 'Like' : 'Likes'}` : 'Like'}
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+              
+              {/* Reply Input */}
+              <div className="reply-form-container">
+                <textarea
+                  value={replyContent}
+                  onChange={(e) => setReplyContent(e.target.value)}
+                  placeholder="Write a reply..."
+                  className="reply-textarea"
+                />
+                <div className="reply-form-actions">
+                  <span className="char-count">{replyContent.length}/280</span>
+                  <button 
+                    onClick={handleReplySubmit}
+                    disabled={replyContent.length > 280 || replyContent.length === 0}
+                    className="post-button"
+                  >
+                    Reply
+                  </button>
+                </div>
+              </div>
+              
+              {/* Replies List */}
+              <div className="replies-list-container">
+                <h4 className="replies-subheader">
+                  {activeNote.replies && activeNote.replies.length > 0 
+                    ? `${activeNote.replies.length} ${activeNote.replies.length === 1 ? 'Reply' : 'Replies'}`
+                    : 'No replies yet'}
+                </h4>
+                
+                {activeNote.replies && activeNote.replies.length > 0 ? (
+                  <div className="replies-items">
+                    {activeNote.replies
+                      .sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp))
+                      .map((reply, index) => (
+                        <div key={index} className="reply-item">
+                          <div className="reply-avatar">
+                            {reply.profilePic ? (
+                              <img 
+                                src={reply.profilePic} 
+                                alt={`${reply.author}'s avatar`}
+                                className="avatar-image"
+                              />
+                            ) : (
+                              <div className="avatar-placeholder">
+                                {reply.author ? reply.author.charAt(0).toUpperCase() : '?'}
+                              </div>
+                            )}
+                          </div>
+                          <div className="reply-content">
+                            <div className="reply-header">
+                              <span className="reply-author">{reply.author}</span>
+                              <span className="reply-time">
+                                {new Date(reply.timestamp).toLocaleString(undefined, {
+                                  month: 'short',
+                                  day: 'numeric',
+                                  hour: '2-digit',
+                                  minute: '2-digit'
+                                })}
+                              </span>
+                            </div>
+                            <p className="reply-text">{reply.content}</p>
+                          </div>
+                        </div>
+                      ))}
+                  </div>
+                ) : (
+                  <p className="empty-replies">No replies yet. Be the first to reply!</p>
+                )}
+              </div>
+            </>
+          )}
+        </div>
+      )}
     </div>
   )
-}
+});

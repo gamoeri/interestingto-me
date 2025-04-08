@@ -1,54 +1,37 @@
 'use client'
 
-import { useContext, useState, useEffect } from 'react'
-import { db } from '@/lib/firebase'
-import { 
-  doc, 
-  deleteDoc,
-  arrayRemove,
-  updateDoc
-} from 'firebase/firestore'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import { useAuth } from '@/context/AuthContext'
+import { useTopics } from '@/context/TopicsContext'
 import TopicContent from '@/components/TopicContent'
-import { AppContext } from '../../layout' // Fixed import path
+import { use } from 'react' 
 
 export default function TopicPage({ params }) {
   const router = useRouter()
-  const topicId = params.id
-  const { user, userProfile, toggleBookmark } = useContext(AppContext)
+  const topicId = use(params).id 
+  const { user, userProfile } = useAuth()
+  const { activeTopics, bookmarkedTopics, deleteTopic, toggleBookmark } = useTopics()
   const [loading, setLoading] = useState(!user)
   const [error, setError] = useState(null)
 
-
   useEffect(() => {
-    // If user is loaded from context, no need for additional auth check
     if (user) {
       setLoading(false)
     }
   }, [user])
+
+  // Find the topic in both active and bookmarked topics
+  const allTopics = [...activeTopics, ...bookmarkedTopics]
+  const topic = allTopics.find(t => t.id === topicId)
+  const isBookmarked = bookmarkedTopics.some(t => t.id === topicId)
 
   // Handle topic deletion
   const handleDeleteTopic = async () => {
     if (!user) return
     
     try {
-      // Delete the topic from Firestore
-      await deleteDoc(doc(db, 'topics', topicId))
-      
-      // Update user's bookmarkedTopics if it was there
-      if (userProfile?.bookmarkedTopics?.includes(topicId)) {
-        await updateDoc(doc(db, 'users', user.uid), {
-          bookmarkedTopics: arrayRemove(topicId)
-        })
-      }
-      
-      if (userProfile?.archivedTopics?.includes(topicId)) {
-        await updateDoc(doc(db, 'users', user.uid), {
-          archivedTopics: arrayRemove(topicId)
-        })
-      }
-      
-      // Navigate back to notes
+      await deleteTopic(topicId)
       router.push('/notes')
     } catch (error) {
       console.error('Error deleting topic:', error)
@@ -57,7 +40,7 @@ export default function TopicPage({ params }) {
   }
 
   // Use the context's toggleBookmark function
-  const handleBookmarkToggle = async (isBookmarked) => {
+  const handleBookmarkToggle = async () => {
     if (!user) return
     await toggleBookmark(topicId)
   }
@@ -82,10 +65,23 @@ export default function TopicPage({ params }) {
     )
   }
 
+  if (!topic) {
+    return (
+      <div className="error-container">
+        <p>Topic not found</p>
+        <button onClick={() => router.push('/notes')} className="primary-button">
+          Back to Notes
+        </button>
+      </div>
+    )
+  }
+
   return (
     <TopicContent
+      topic={topic}
       topicId={topicId}
       userId={user?.uid}
+      isBookmarked={isBookmarked}
       onTopicDeleted={handleDeleteTopic}
       onBookmarkToggle={handleBookmarkToggle}
     />

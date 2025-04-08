@@ -1,309 +1,250 @@
-/* Topic Content Styles */
-.topic-content {
-  background-color: white;
-  border-radius: 12px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
-  padding: 24px;
+/* Topic Content Styling */
+.topic-content-wrapper {
   display: flex;
   flex-direction: column;
-  gap: 24px;
+  gap: 1.5rem;
+  max-width: 100%;
 }
 
-.topic-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  border-bottom: 1px solid #f0f0f0;
-  padding-bottom: 16px;
-}
-
-.topic-title-section {
-  flex-grow: 1;
-}
-
-/* Title and bookmark row - NEW */
-.title-bookmark-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  width: 100%;
-}
-
-.topic-title {
-  font-size: 1.5rem;
-  font-weight: 700;
-  color: #111827;
-  margin: 0 0 8px 0;
-  flex-grow: 1;
-  padding-right: 16px; /* Space between title and bookmark button */
-}
-
-.topic-owner {
-  font-size: 0.9rem;
-  color: #6b7280;
-}
-
-.owner-name {
-  font-weight: 600;
-  color: #4b5563;
-}
-
-/* Clickable username styles */
-.owner-name.clickable, 
-.author-name.clickable {
-  cursor: pointer;
-  color: #2563eb;
-  text-decoration: underline;
-  font-weight: 500;
-  transition: color 0.2s ease;
-}
-
-.owner-name.clickable:hover, 
-.author-name.clickable:hover {
-  color: #1d4ed8;
-}
-
-/* Clickable avatar styles */
-.comment-avatar,
-.comment-avatar-placeholder {
-  cursor: pointer;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
-}
-
-.comment-avatar:hover,
-.comment-avatar-placeholder:hover {
-  transform: scale(1.05);
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-}
-
-/* Bookmark button */
-.bookmark-button {
-  display: flex;
-  align-items: center;
-  gap: 6px;
+.topic-content {
+  margin-top: 24px;
   background-color: white;
-  border: 1px solid #e5e7eb;
-  border-radius: 8px;
-  padding: 8px 16px;
-  font-size: 0.9rem;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.bookmark-button:hover {
-  background-color: #f9fafb;
-  border-color: #d1d5db;
-}
-
-.bookmark-button.bookmarked {
-  background-color: #fef3c7;
-  border-color: #fbbf24;
-  color: #92400e;
-}
-
-/* Add topic button and form */
-.add-topic-button {
-  color: #a4a4a4;
-  font-size: 0.9rem;
-  background: none;
-  border: none;
-  font-weight: 500;
-  padding: 8px 0;
-  cursor: pointer;
-  display: inline-block;
-  width: 100%;
-  text-align: left;
-}
-
-.add-topic-button:hover {
-  background-color: #11182713;
-}
-
-.add-topic-form {
-  margin-top: 12px;
-}
-
-/* Content Section */
-.topic-content-section {
-  background-color: #f9fafb;
-  border-radius: 8px;
+  border-radius: 12px;
   border: 1px solid #e5e7eb;
   overflow: hidden;
 }
 
-.content-edit-container {
-  padding: 16px;
-  position: relative; /* Added for the done button */
+/* Topic Header */
+.topic-header {
+  padding: 1.5rem;
+  border-bottom: 1px solid #e5e7eb;
 }
 
-/* Add a visible done button in edit mode */
-.content-edit-container::after {
-  content: "Done";
-  position: absolute;
-  top: 16px;
-  right: 16px;
-  background-color: #3b82f6;
-  color: white;
-  padding: 6px 12px;
-  border-radius: 6px;
-  font-size: 0.85rem;
-  font-weight: 500;
-  cursor: pointer;
-  z-index: 10;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-}
-
-.content-textarea {
-  width: 100%;
-  min-height: 200px;
-  resize: vertical;
-  margin-bottom: 16px;
-  border: 1px solid #d1d5db;
-  border-radius: 6px;
-  padding: 12px;
-  font-size: 0.95rem;
-  line-height: 1.5;
-}
-
-.content-actions {
+.topic-title-section {
   display: flex;
-  justify-content: flex-end;
-  gap: 12px;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.title-bookmark-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.topic-title {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #525252;
+  margin: 0;
+}
+
+.topic-actions {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+}
+
+.settings-button, .bookmark-button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0.5rem;
+  border-radius: 6px;
+  transition: all 0.2s ease;
+  color: #9ca3af; /* Lighter default color */
+  font-size: 0.95rem;
+}
+
+.settings-button:hover, .bookmark-button:hover {
+  background-color: #f3f4f6;
+  color: #4b5563; /* Darker on hover */
+}
+
+.bookmark-button.bookmarked {
+  background-color: #fef3c7;
+  color: #d97706;
+  border-color: #fde68a;
+}
+
+/* Topic metadata */
+.topic-metadata {
+  display: flex;
+  flex-direction: row; 
+  gap: 0.75rem; 
+  font-size: 0.875rem;
+  color: #6b7280;
+  margin-top: 0.75rem;
+  text-align: left; /* Ensure left alignment */
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  color: #6b7280;
+  font-size: 0.875rem;
+  margin-top: 1rem; /* Increased margin */
+  
+}
+
+.topic-owner, .topic-dates, .bookmark-count {
+  display: flex;
+  flex-direction: column; /* Stack dates vertically */
+  align-items: left;
+}
+
+.created-date, .updated-date {
+  display: flex;
+  align-items: left;
+}
+
+.owner-name {
+  color: #2563eb;
+  margin-left: 0.25rem;
+}
+
+/* Tabs Navigation */
+.topic-tabs-navigation {
+  border-bottom: 1px solid #e5e7eb;
+  background-color: #f9fafb;
+}
+
+.topic-main-tabs {
+  display: flex;
+  gap: 0;
+  padding: 0 1.5rem;
+}
+
+.topic-main-tab {
+  padding: 1rem 1.5rem;
+  font-size: 1rem;
+  font-weight: 500;
+  color: #4b5563;
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.topic-main-tab:hover {
+  color: #111827;
+}
+
+.topic-main-tab.active-main-tab {
+  color: #3b82f6;
+  border-bottom: 2px solid #3b82f6;
+}
+
+/* Tab content */
+.topic-tab-content {
+  padding: 1.5rem;
+}
+
+.section-title {
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin-bottom: 1rem;
+  color: #111827;
+}
+
+/* Content section */
+.topic-content-section {
+  margin-bottom: 1.5rem;
 }
 
 .content-display-container {
-  padding: 20px;
   position: relative;
 }
 
 .content-text {
-  font-size: 0.95rem;
+  font-size: 1rem;
   line-height: 1.6;
-  color: #1f2937;
-  white-space: pre-wrap;
+  color: #111827;
 }
 
 .content-text p {
-  margin: 0 0 16px 0;
-}
-
-.content-text p:last-child {
-  margin-bottom: 0;
-}
-
-.content-text a {
-  color: #2563eb;
-  text-decoration: underline;
+  margin-bottom: 0.75rem;
 }
 
 .empty-content {
   color: #6b7280;
   font-style: italic;
-  margin: 0;
 }
 
 .edit-button {
   position: absolute;
-  top: 16px;
-  right: 16px;
-  background-color: #f3f4f6;
-  border: 1px solid #d1d5db;
+  top: 0;
+  right: 0;
+  background-color: #f9fafb;
+  border: 1px solid #e5e7eb;
   border-radius: 6px;
-  padding: 6px 12px;
-  font-size: 0.85rem;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.875rem;
   color: #4b5563;
   cursor: pointer;
   transition: all 0.2s ease;
-  opacity: 0.9; /* Ensure it's always visible */
-  z-index: 5;
 }
 
 .edit-button:hover {
-  background-color: #e5e7eb;
-  color: #374151;
+  background-color: #f3f4f6;
+  color: #111827;
 }
 
-/* Style for done button state */
-.edit-button.done-button {
-  background-color: #3b82f6;
-  color: white;
-  border-color: #2563eb;
+.content-edit-container {
+  margin-bottom: 1rem;
 }
 
-.edit-button.done-button:hover {
-  background-color: #2563eb;
+.content-textarea {
+  width: 100%;
+  min-height: 120px;
+  padding: 0.75rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  resize: vertical;
+  font-family: inherit;
+  font-size: 1rem;
+  line-height: 1.6;
+  margin-bottom: 0.75rem;
 }
 
-/* Topic Notes Section */
-.topic-notes-section {
-  margin-top: 24px;
-  border-top: 1px solid #e5e7eb;
-  padding-top: 24px;
-}
-
-.topic-notes-title {
-  font-size: 1.25rem;
-  font-weight: 600;
-  margin: 0 0 16px 0;
-}
-
-.topic-notes-list {
+.content-actions {
   display: flex;
-  flex-direction: column;
-  gap: 16px;
+  gap: 0.75rem;
 }
 
-.empty-topic-notes {
-  color: #6b7280;
-  text-align: center;
-  padding: 16px;
-  background-color: #f9fafb;
-  border-radius: 8px;
-  font-style: italic;
-}
-
-/* Topic Content Wrapper - NEW */
-.topic-content-wrapper {
-  display: flex;
-  flex-direction: column;
-  gap: 24px;
-}
-
-/* Comments Section Wrapper - NEW */
+/* Comments section */
 .comments-section-wrapper {
-  padding: 0 0px;  /* Same padding as the main content area */
+  background-color: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  overflow: hidden;
 }
 
-/* Comments Section */
 .comments-section {
-  padding-top: 24px;
-  background-color: transparent;  /* Transparent background */
+  padding: 1.5rem;
 }
 
 .comments-title {
-  font-size: 1.2rem;
+  font-size: 1.25rem;
   font-weight: 600;
-  margin: 0 0 16px 0;
+  margin: 0 0 1rem 0;
+  color: #111827;
 }
 
 .comment-form {
-  margin-bottom: 24px;
-  background-color: transparent;
-  border-radius: 8px;
-  padding: 12px;
-  border: 1px solid #e5e7eb;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  margin-bottom: 1.5rem;
 }
 
 .comment-textarea {
   width: 100%;
   min-height: 100px;
-  resize: vertical;
-  margin-bottom: 16px;
-  border: 1px solid #d1d5db;
+  padding: 0.75rem;
+  border: 1px solid #e5e7eb;
   border-radius: 6px;
-  padding: 12px;
-  font-size: 0.95rem;
+  resize: vertical;
+  font-family: inherit;
+  font-size: 1rem;
+  line-height: 1.6;
+  margin-bottom: 0.75rem;
 }
 
 .comment-submit {
@@ -311,8 +252,8 @@
   color: white;
   border: none;
   border-radius: 6px;
-  padding: 8px 16px;
-  font-size: 0.9rem;
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
   font-weight: 500;
   cursor: pointer;
   transition: background-color 0.2s ease;
@@ -322,312 +263,147 @@
   background-color: #2563eb;
 }
 
-.comments-list-container {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
-
 .comments-list {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 1rem;
 }
 
 .comment-item {
-  background-color: white;
   border: 1px solid #e5e7eb;
   border-radius: 8px;
-  padding: 16px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  padding: 1rem;
 }
 
 .comment-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 12px;
+  margin-bottom: 0.75rem;
 }
 
 .comment-author {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 0.5rem;
 }
 
-.comment-avatar,
-.comment-avatar-placeholder {
+.comment-avatar, .comment-avatar-placeholder {
   width: 32px;
   height: 32px;
   border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.comment-avatar {
-  object-fit: cover;
-  border: 2px solid #e5e7eb;
+  overflow: hidden;
 }
 
 .comment-avatar-placeholder {
-  background-color: #3b82f6;
+  background-color: #6366f1;
   color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   font-weight: 600;
-  font-size: 0.9rem;
-}
-
-.author-name {
-  font-weight: 600;
-  color: #111827;
-  font-size: 0.95rem;
+  font-size: 0.875rem;
 }
 
 .comment-date {
   color: #6b7280;
-  font-size: 0.8rem;
+  font-size: 0.85rem;
 }
 
 .comment-content {
-  margin: 0;
   font-size: 0.95rem;
   line-height: 1.6;
-  color: #1f2937;
+  color: #111827;
+  margin: 0;
 }
 
 .empty-comments {
   color: #6b7280;
   text-align: center;
-  padding: 16px;
-  background-color: #0000000c;
-  border-radius: 8px;
+  padding: 1.5rem 0;
   font-style: italic;
 }
 
-/* Bookmarked topics styling */
-.bookmarked-topic {
-  display: flex;
-  flex-direction: column;
-  width: 100%;
-}
-
-.topic-owner-label {
-  font-size: 0.8rem;
-  color: #6b7280;
-  margin-top: 2px;
-}
-
-/* Topic Metadata Styles - NEW */
-.topic-metadata {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  margin-top: 8px;
-  font-size: 0.85rem;
-  color: #6b7280;
-}
-
-.topic-dates {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 12px;
-}
-
-.created-date,
-.updated-date {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-}
-
-.created-date span,
-.updated-date span,
-.bookmark-count span {
-  font-weight: 500;
+/* Add Topic Button Styling */
+.add-topic-button {
+  background-color: #f3f4f6;
   color: #4b5563;
-}
-
-.bookmark-count {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  margin-top: 4px;
-}
-
-.bookmark-count::before {
-  content: "★";
-  font-size: 0.9rem;
-  color: #fbbf24;
-}
-
-/* Enhanced Bookmark Button - NEW */
-.bookmark-button {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  background-color: white;
   border: 1px solid #e5e7eb;
   border-radius: 8px;
-  padding: 8px 16px;
-  font-size: 0.9rem;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.bookmark-button:hover {
-  background-color: #f9fafb;
-  border-color: #d1d5db;
-}
-
-.bookmark-button.bookmarked {
-  background-color: #fef3c7;
-  border-color: #fbbf24;
-  color: #92400e;
-}
-
-/* Responsive adjustments for mobile - NEW */
-@media (max-width: 640px) {
-  .topic-metadata {
-    margin-top: 12px;
-  }
-  
-  .topic-header {
-    flex-direction: column;
-    gap: 12px;
-  }
-  
-  .bookmark-button {
-    align-self: flex-start;
-  }
-}
-
-/* Delete Topic Section */
-.delete-topic-section {
-  margin-top: 20px;
-  padding: 16px;
-  background-color: #fee2e2;
-  border: 1px solid #fecaca;
-  border-radius: 6px;
-  display: block !important;
-  position: relative;
-  z-index: 10;
-}
-
-.delete-topic-section h3 {
-  color: #b91c1c;
-  font-size: 1rem;
-  font-weight: 600;
-  margin: 0 0 12px 0;
-}
-
-.delete-topic-button {
-  background-color: #ef4444;
-  color: white;
-  border: none;
-  border-radius: 6px;
-  padding: 8px 16px;
-  font-size: 0.9rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: background-color 0.2s ease;
-  width: 100%;
-  display: block !important;
-}
-
-.delete-topic-button:hover {
-  background-color: #dc2626;
-}
-
-.delete-topic-button:hover {
-  background-color: #dc2626;
-}
-
-.delete-confirm {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.delete-confirm p {
-  margin: 0;
-  color: #7f1d1d;
-  font-size: 0.9rem;
-}
-
-.delete-confirm-buttons {
-  display: flex;
-  gap: 8px;
-}
-
-.confirm-delete-button {
-  background-color: #ef4444;
-  color: white;
-  border: none;
-  border-radius: 6px;
-  padding: 8px 16px;
-  font-size: 0.9rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: background-color 0.2s ease;
-  flex-grow: 1;
-}
-
-.confirm-delete-button:hover {
-  background-color: #dc2626;
-}
-
-.cancel-delete-button {
-  background-color: white;
-  color: #4b5563;
-  border: 1px solid #d1d5db;
-  border-radius: 6px;
-  padding: 8px 16px;
+  padding: 0.65rem 1rem;
   font-size: 0.9rem;
   font-weight: 500;
   cursor: pointer;
   transition: all 0.2s ease;
-}
-
-.cancel-delete-button:hover {
-  background-color: #f3f4f6;
-}
-
-/* Settings Button */
-.topic-actions {
   display: flex;
   align-items: center;
-  gap: 12px;
+  justify-content: center;
+  width: 100%;
+  margin-top: 0.75rem;
 }
 
-.settings-button {
-  background: none;
-  border: none;
-  font-size: 1.2rem;
-  cursor: pointer;
-  color: #6b7280;
-  padding: 4px 8px;
-  border-radius: 4px;
-  transition: all 0.2s ease;
+.add-topic-button:hover {
+  background-color: #e5e7eb;
+  color: #111827;
 }
 
-.settings-button:hover {
-  color: #4b5563;
-  background-color: #f3f4f6;
+.add-topic-button::before {
+  content: "+";
+  margin-right: 0.5rem;
+  font-size: 1.1rem;
+  font-weight: 600;
 }
 
-/* Settings Panel */
-.settings-panel {
-  padding: 24px;
-  background-color: white;
+/* Styling for the add topic form that appears when clicked */
+.add-topic-form {
+  margin-top: 0.75rem;
+  padding: 1rem;
+  border: 1px solid #e5e7eb;
   border-radius: 8px;
+  background-color: white;
+}
+
+.topic-notes-timeline {
+  margin-top: 1rem;
+  display: flex;
+  flex-direction: column;
+  padding: 16px 24px;
+  background-color: white;
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  width: 100%;
+}
+
+.topic-timeline-tab {
+  width: 100%;
+}
+
+.timeline-entry {
+  background-color: white;
+  border-radius: 0px;
+  padding: 0px 0px;
+  margin-bottom: 0px;
+  transition: background-color 0.2s;
+}
+
+.timeline-entry:hover {
+  background-color: #f9fafb;
+}
+
+
+/* Topic Settings Panel */
+.settings-panel {
+  background-color: white;
+  padding: 1.5rem;
+  height: 100%;
 }
 
 .settings-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 24px;
-  padding-bottom: 16px;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
   border-bottom: 1px solid #e5e7eb;
 }
 
@@ -643,68 +419,62 @@
   border: none;
   font-size: 1.5rem;
   line-height: 1;
-  cursor: pointer;
   color: #6b7280;
-  padding: 4px 8px;
+  cursor: pointer;
+  padding: 0.25rem;
 }
 
 .close-settings-button:hover {
-  color: #4b5563;
+  color: #111827;
 }
 
 .settings-form {
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 1.5rem;
 }
 
 .form-group {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 0.5rem;
 }
 
 .form-group label {
-  font-size: 0.9rem;
+  font-size: 0.95rem;
   font-weight: 500;
   color: #4b5563;
 }
 
 .settings-input {
-  width: 100%;
-  padding: 10px 12px;
-  border: 1px solid #d1d5db;
+  padding: 0.75rem;
+  border: 1px solid #e5e7eb;
   border-radius: 6px;
-  font-size: 0.95rem;
-  color: #111827;
+  font-size: 1rem;
+  width: 100%;
 }
 
-.settings-input:focus {
-  outline: none;
-  border-color: #3b82f6;
-  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
-}
-
-/* Archive Toggle */
+/* Archive toggle */
 .archive-toggle {
-  margin-top: 8px;
+  display: flex;
+  flex-direction: column;
 }
 
 .toggle-container {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 0.75rem;
 }
 
 .toggle-checkbox {
   appearance: none;
-  width: 40px;
-  height: 20px;
+  width: 3rem;
+  height: 1.5rem;
   background-color: #e5e7eb;
-  border-radius: 20px;
+  border-radius: 9999px;
   position: relative;
-  cursor: pointer;
   transition: background-color 0.2s ease;
+  cursor: pointer;
 }
 
 .toggle-checkbox:checked {
@@ -712,160 +482,156 @@
 }
 
 .toggle-checkbox::before {
-  content: "";
+  content: '';
   position: absolute;
-  top: 2px;
-  left: 2px;
-  width: 16px;
-  height: 16px;
+  width: 1.25rem;
+  height: 1.25rem;
   background-color: white;
   border-radius: 50%;
+  top: 0.125rem;
+  left: 0.125rem;
   transition: transform 0.2s ease;
 }
 
 .toggle-checkbox:checked::before {
-  transform: translateX(20px);
+  transform: translateX(1.5rem);
 }
 
 .toggle-label {
-  font-size: 0.9rem;
-  color: #6b7280;
-}
-
-.archive-info {
-  font-size: 0.85rem;
-  color: #6b7280;
-  font-style: italic;
-  margin-top: -12px;
-}
-
-/* NEW STYLES FOR PINNED NOTES SECTION */
-
-/* Pinned Notes Section */
-.pinned-notes-section {
-  margin: 24px 0;
-  padding: 16px;
-  background-color: #f9fafb;
-  border-radius: 8px;
-  border: 1px solid #e5e7eb;
-}
-
-.section-title {
-  font-size: 1.25rem;
-  font-weight: 600;
-  margin-bottom: 16px;
-  color: #1f2937;
-}
-
-.pinned-notes-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: 16px;
-}
-
-.pinned-note-card {
-  background-color: white;
-  border-radius: 8px;
-  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
-  overflow: hidden;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
-  border: 1px solid #e5e7eb;
-}
-
-.pinned-note-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-}
-
-.pinned-note-content {
-  padding: 16px;
-}
-
-.pinned-note-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 12px;
-}
-
-.note-author-info {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.avatar-small {
-  width: 24px;
-  height: 24px;
-  border-radius: 50%;
-  object-fit: cover;
-}
-
-.avatar-placeholder-small {
-  width: 24px;
-  height: 24px;
-  border-radius: 50%;
-  background-color: #3b82f6;
-  color: white;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 0.8rem;
-  font-weight: bold;
-}
-
-.note-author-name {
-  font-weight: 500;
-  font-size: 0.9rem;
+  font-size: 0.95rem;
   color: #4b5563;
 }
 
-.unpin-button {
-  background: none;
-  border: none;
-  cursor: pointer;
-  font-size: 1rem;
+.archive-info {
+  font-size: 0.875rem;
   color: #6b7280;
-  transform: rotate(45deg);
-  transition: color 0.2s ease;
-}
-
-.unpin-button:hover {
-  color: #ef4444;
-}
-
-.pinned-note-text {
-  margin: 0;
-  font-size: 0.95rem;
+  margin-top: 0.5rem;
   line-height: 1.5;
-  color: #1f2937;
-  overflow: hidden;
-  display: -webkit-box;
-  -webkit-line-clamp: 4;
-  -webkit-box-orient: vertical;
 }
 
-.pinned-note-footer {
-  margin-top: 12px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.pinned-date {
-  font-size: 0.8rem;
-  color: #6b7280;
-}
-
-.empty-pinned-notes {
-  padding: 24px;
-  text-align: center;
-  background-color: white;
+/* Danger zone */
+.delete-topic-section {
+  margin-top: 1rem;
+  padding: 1.25rem;
+  border: 1px solid #fecaca;
   border-radius: 8px;
-  border: 1px dashed #d1d5db;
+  background-color: #fee2e2;
 }
 
-.empty-pinned-notes p {
-  color: #6b7280;
-  margin: 0;
+.delete-topic-section h3 {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #b91c1c;
+  margin: 0 0 1rem 0;
 }
+
+.delete-topic-button {
+  background-color: #ef4444;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 0.5rem 1rem;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  width: 100%;
+}
+
+.delete-topic-button:hover {
+  background-color: #dc2626;
+}
+
+.delete-confirm {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.delete-confirm p {
+  font-size: 0.95rem;
+  color: #b91c1c;
+  margin: 0;
+  line-height: 1.6;
+}
+
+.delete-confirm-buttons {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.confirm-delete-button {
+  background-color: #ef4444;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 0.5rem 1rem;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.confirm-delete-button:hover {
+  background-color: #dc2626;
+}
+
+.cancel-delete-button {
+  background-color: white;
+  color: #4b5563;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  padding: 0.5rem 1rem;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.cancel-delete-button:hover {
+  background-color: #f3f4f6;
+}
+
+.settings-actions {
+  display: flex;
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+
+.save-settings-button {
+  background-color: #3b82f6;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 0.5rem 1rem;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.save-settings-button:hover {
+  background-color: #2563eb;
+}
+
+.save-settings-button:disabled {
+  background-color: #9ca3af;
+  cursor: not-allowed;
+}
+
+.cancel-settings-button {
+  background-color: white;
+  color: #4b5563;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  padding: 0.5rem 1rem;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.cancel-settings-button:hover {
+  background-color: #f3f4f6;
+}
+

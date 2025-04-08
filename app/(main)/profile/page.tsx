@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { auth, db } from '@/lib/firebase'
-import { doc, getDoc } from 'firebase/firestore'
+import { doc, getDoc, collection, query, where, getDocs } from 'firebase/firestore'
 import { useRouter } from 'next/navigation'
 
 export default function ProfilePage() {
@@ -14,6 +14,7 @@ export default function ProfilePage() {
     topicsCount: 0,
     bookmarksCount: 0
   })
+  const [archivedTopics, setArchivedTopics] = useState([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -35,10 +36,30 @@ export default function ProfilePage() {
           const userData = userDoc.data()
           setUserProfile(userData)
           
-          // Set stats
+          // Fetch actual counts
+          const notesQuery = query(collection(db, 'notes'), where('authorId', '==', authUser.uid))
+          const notesSnapshot = await getDocs(notesQuery)
+          
+          const topicsQuery = query(collection(db, 'topics'), where('userId', '==', authUser.uid))
+          const topicsSnapshot = await getDocs(topicsQuery)
+          
+          // Fetch archived topics
+          const archivedTopicsQuery = query(
+            collection(db, 'topics'), 
+            where('userId', '==', authUser.uid),
+            where('archived', '==', true)
+          )
+          const archivedTopicsSnapshot = await getDocs(archivedTopicsQuery)
+          const archivedTopicsList = archivedTopicsSnapshot.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data()
+          }))
+          setArchivedTopics(archivedTopicsList)
+          
+          // Set stats with actual counts
           setUserStats({
-            notesCount: 0, // You might want to fetch this count
-            topicsCount: 0, // You might want to fetch this count
+            notesCount: notesSnapshot.docs.length,
+            topicsCount: topicsSnapshot.docs.length,
             bookmarksCount: userData.bookmarkedTopics?.length || 0
           })
         } else {
@@ -55,6 +76,16 @@ export default function ProfilePage() {
     fetchUserProfile()
   }, [router])
 
+  // Sign out handler
+  const handleSignOut = async () => {
+    try {
+      await auth.signOut()
+      router.push('/signin')
+    } catch (error) {
+      console.error('Sign out error:', error)
+    }
+  }
+
   if (loading) {
     return (
       <div className="loading-container">
@@ -65,7 +96,7 @@ export default function ProfilePage() {
   }
 
   return (
-    <div className="profile-view">
+    <div className="profile-section">
       {/* Profile Banner */}
       <div 
         className="profile-banner" 
@@ -106,8 +137,8 @@ export default function ProfilePage() {
         </div>
       </div>
       
-      {/* Profile Stats */}
-      <div className="profile-stats">
+      {/* Profile Stats - Now positioned below profile details */}
+      <div className="profile-stats-horizontal">
         <div className="stat-card">
           <h3>Notes</h3>
           <p className="stat-value">{userStats.notesCount}</p>
@@ -122,20 +153,36 @@ export default function ProfilePage() {
         </div>
       </div>
       
-      {/* Quick Links */}
+      {/* Archived Topics */}
       <div className="profile-quick-links">
-        <button 
-          className="quick-link-button"
-          onClick={() => router.push('/notes')}
-        >
-          View My Notes
-        </button>
-        <button 
-          className="quick-link-button"
-          onClick={() => router.push('/bookmarks')}
-        >
-          View My Bookmarks
-        </button>
+        <div className="quick-links-list">
+          <div className="archived-topics-section">
+            <h3 className="archived-topics-title">Archived Topics</h3>
+            {archivedTopics.length > 0 ? (
+              <ul className="archived-topics-list">
+                {archivedTopics.map((topic) => (
+                  <li 
+                    key={topic.id} 
+                    className="quick-link-button"
+                    onClick={() => router.push(`/topics/${topic.id}`)}
+                  >
+                    {topic.name}
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="no-archived-topics">No archived topics</p>
+            )}
+          </div>
+          
+          {/* Sign Out Button */}
+          <button 
+            className="quick-link-button signout-button"
+            onClick={handleSignOut}
+          >
+            Sign Out
+          </button>
+        </div>
       </div>
     </div>
   )

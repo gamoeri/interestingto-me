@@ -12,7 +12,8 @@ import {
   updateDoc,
   deleteDoc,
   arrayUnion,
-  arrayRemove
+  arrayRemove,
+  setDoc
 } from 'firebase/firestore'
 import { db, auth } from '@/lib/firebase'
 import { useRouter } from 'next/navigation'
@@ -33,7 +34,11 @@ export default function TopicContent({ topicId, userId, onTopicDeleted, onBookma
   const [bookmarkCount, setBookmarkCount] = useState(0)
   const [isArchived, setIsArchived] = useState(false)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
-  const [pinnedNotes, setPinnedNotes] = useState([]) // New state for pinned notes
+  const [activeTab, setActiveTab] = useState('notes') // State for active tab
+  const [sentNotes, setSentNotes] = useState([])
+  const [showSendNoteModal, setShowSendNoteModal] = useState(false)
+  const [userNotes, setUserNotes] = useState([])
+  const [selectedNotesToSend, setSelectedNotesToSend] = useState([])
   
   // Check if current user is the owner of this topic
   const isOwner = userId === topic?.userId
@@ -108,37 +113,8 @@ export default function TopicContent({ topicId, userId, onTopicDeleted, onBookma
           
           setComments(commentsData)
           
-          // Fetch pinned notes
-          // First check if topic has pinnedNoteIds array
-          const pinnedNoteIds = topicData.pinnedNoteIds || []
-          
-          if (pinnedNoteIds.length > 0) {
-            // Fetch each note by ID
-            const pinnedNotesData = await Promise.all(
-              pinnedNoteIds.map(async (noteId) => {
-                const noteDoc = await getDoc(doc(db, 'notes', noteId))
-                if (noteDoc.exists()) {
-                  const noteData = { id: noteDoc.id, ...noteDoc.data() }
-                  
-                  // Fetch author info if not already included
-                  if (noteData.authorId && !noteData.author) {
-                    const authorDoc = await getDoc(doc(db, 'users', noteData.authorId))
-                    if (authorDoc.exists()) {
-                      const authorData = authorDoc.data()
-                      noteData.author = authorData.displayName || 'Unknown'
-                      noteData.profilePic = authorData.profilePic || null
-                    }
-                  }
-                  
-                  return noteData
-                }
-                return null
-              })
-            )
-            
-            // Filter out any null values (notes that weren't found)
-            setPinnedNotes(pinnedNotesData.filter(Boolean))
-          }
+          // Fetch sent notes for this topic
+          await fetchSentNotes(topicId)
         } else {
           setError('Topic not found')
         }
@@ -151,7 +127,65 @@ export default function TopicContent({ topicId, userId, onTopicDeleted, onBookma
     }
     
     fetchTopic()
+    
+    // Fetch user's notes for the send note modal
+    if (userId) {
+      fetchUserNotes(userId)
+    }
   }, [topicId, userId])
+
+  // Fetch notes that have been sent to this topic
+  const fetchSentNotes = async (topicId) => {
+    try {
+      // First check if the sentNotes collection exists for this topic
+      const sentNotesRef = collection(db, 'topics', topicId, 'sentNotes')
+      const sentNotesSnapshot = await getDocs(sentNotesRef)
+      
+      const sentNotesData = await Promise.all(
+        sentNotesSnapshot.docs.map(async (noteDoc) => {
+          const note = { id: noteDoc.id, ...noteDoc.data() }
+          
+          // Fetch note author info if not included
+          if (note.authorId && (!note.author || !note.profilePic)) {
+            try {
+              const authorDoc = await getDoc(doc(db, 'users', note.authorId))
+              if (authorDoc.exists()) {
+                const authorData = authorDoc.data()
+                note.author = authorData.displayName || 'Unknown'
+                note.profilePic = authorData.profilePic || null
+              }
+            } catch (e) {
+              console.error('Error fetching author info:', e)
+            }
+          }
+          
+          return note
+        })
+      )
+      
+      setSentNotes(sentNotesData)
+    } catch (error) {
+      console.error('Error fetching sent notes:', error)
+    }
+  }
+  
+  // Fetch user's notes for sending to topic
+  const fetchUserNotes = async (userId) => {
+    try {
+      const notesQuery = query(collection(db, 'notes'), where('authorId', '==', userId))
+      const notesSnapshot = await getDocs(notesQuery)
+      
+      const notesData = notesSnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data(),
+        isSelected: false // Add selection state for the modal
+      }))
+      
+      setUserNotes(notesData)
+    } catch (error) {
+      console.error('Error fetching user notes:', error)
+    }
+  }
 
   // Navigate to a user's profile
   const navigateToUserProfile = (username) => {
@@ -219,31 +253,6 @@ export default function TopicContent({ topicId, userId, onTopicDeleted, onBookma
     }
   }
   
-  // Function to unpin a note from the topic
-  const handleUnpinNote = async (noteId) => {
-    if (!isOwner) return
-    
-    try {
-      // Remove the note ID from the topic's pinnedNoteIds array
-      const topicRef = doc(db, 'topics', topicId)
-      await updateDoc(topicRef, {
-        pinnedNoteIds: arrayRemove(noteId)
-      })
-      
-      // Update local state by removing the note from pinnedNotes
-      setPinnedNotes(prev => prev.filter(note => note.id !== noteId))
-      
-      // Update the note's isPinned status (if you're tracking this on the note)
-      const noteRef = doc(db, 'notes', noteId)
-      await updateDoc(noteRef, {
-        isPinned: false
-      })
-    } catch (error) {
-      console.error('Error unpinning note:', error)
-      alert('Failed to unpin note. Please try again.')
-    }
-  }
-  
   const handleAddComment = async (e) => {
     e.preventDefault()
     if (!newComment.trim()) return
@@ -306,7 +315,6 @@ export default function TopicContent({ topicId, userId, onTopicDeleted, onBookma
       setIsBookmarked(!isBookmarked);
       
       // Force a refresh of the bookmarked topics in the parent component
-      // We need to add this to the props from the parent component
       if (typeof onBookmarkToggle === 'function') {
         onBookmarkToggle(topicId, !isBookmarked);
       }
@@ -315,6 +323,66 @@ export default function TopicContent({ topicId, userId, onTopicDeleted, onBookma
       alert('Failed to update bookmark. Please try again.');
     }
   };
+  
+  // Toggle note selection in the send note modal
+  const toggleNoteSelection = (noteId) => {
+    setUserNotes(prevNotes => 
+      prevNotes.map(note => 
+        note.id === noteId 
+          ? { ...note, isSelected: !note.isSelected } 
+          : note
+      )
+    )
+    
+    // Also update selectedNotesToSend
+    const isCurrentlySelected = userNotes.find(note => note.id === noteId)?.isSelected
+    
+    if (isCurrentlySelected) {
+      // If it was selected, remove it
+      setSelectedNotesToSend(prev => prev.filter(id => id !== noteId))
+    } else {
+      // If it wasn't selected, add it
+      setSelectedNotesToSend(prev => [...prev, noteId])
+    }
+  }
+  
+  // Send selected notes to this topic
+  const handleSendNotes = async () => {
+    try {
+      const currentUser = auth.currentUser
+      if (!currentUser) return
+      
+      // Get the full note objects for all selected notes
+      const selectedNotes = userNotes.filter(note => note.isSelected)
+      
+      // For each selected note, add it to the topic's sentNotes collection
+      for (const note of selectedNotes) {
+        // Reference to the sentNotes collection for this topic
+        const sentNoteRef = doc(db, 'topics', topicId, 'sentNotes', note.id)
+        
+        // Add the note data to the sentNotes collection
+        await setDoc(sentNoteRef, {
+          ...note,
+          sentAt: new Date().toISOString(),
+          sentBy: currentUser.uid,
+          originalNoteId: note.id
+        })
+      }
+      
+      // Refresh the sent notes
+      await fetchSentNotes(topicId)
+      
+      // Reset the selection and close the modal
+      setUserNotes(prevNotes => 
+        prevNotes.map(note => ({ ...note, isSelected: false }))
+      )
+      setSelectedNotesToSend([])
+      setShowSendNoteModal(false)
+    } catch (error) {
+      console.error('Error sending notes to topic:', error)
+      alert('Failed to send notes to topic. Please try again.')
+    }
+  }
   
   // Format dates for display
   const formatDate = (dateString) => {
@@ -442,6 +510,271 @@ export default function TopicContent({ topicId, userId, onTopicDeleted, onBookma
       </div>
     );
   };
+  
+  // Send Note Modal
+  const SendNoteModal = () => {
+    return (
+      <div className="send-note-modal-overlay">
+        <div className="send-note-modal">
+          <div className="modal-header">
+            <h2>Send Notes to Topic</h2>
+            <button 
+              className="close-modal-button"
+              onClick={() => {
+                setShowSendNoteModal(false);
+                setUserNotes(prevNotes => 
+                  prevNotes.map(note => ({ ...note, isSelected: false }))
+                );
+                setSelectedNotesToSend([]);
+              }}
+            >
+              ×
+            </button>
+          </div>
+          
+          <div className="modal-content">
+            <p>Select notes to send to <strong>{topic?.name}</strong>:</p>
+            
+            <div className="notes-select-list">
+              {userNotes.length > 0 ? (
+                userNotes.map(note => (
+                  <div 
+                    key={note.id} 
+                    className={`note-select-item ${note.isSelected ? 'selected' : ''}`}
+                    onClick={() => toggleNoteSelection(note.id)}
+                  >
+                    <div className="note-select-checkbox">
+                      <input 
+                        type="checkbox" 
+                        checked={note.isSelected}
+                        onChange={() => {}} // Handled by the div click
+                        onClick={(e) => e.stopPropagation()}
+                      />
+                    </div>
+                    <div className="note-select-content">
+                      <p className="note-preview">{note.content}</p>
+                      <span className="note-date">{formatDate(note.timestamp)}</span>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <p className="no-notes-message">You don't have any notes to send.</p>
+              )}
+            </div>
+          </div>
+          
+          <div className="modal-footer">
+            <span className="selected-count">
+              {selectedNotesToSend.length} {selectedNotesToSend.length === 1 ? 'note' : 'notes'} selected
+            </span>
+            <div className="modal-actions">
+              <button 
+                className="cancel-button"
+                onClick={() => {
+                  setShowSendNoteModal(false);
+                  setUserNotes(prevNotes => 
+                    prevNotes.map(note => ({ ...note, isSelected: false }))
+                  );
+                  setSelectedNotesToSend([]);
+                }}
+              >
+                Cancel
+              </button>
+              <button 
+                className="send-button"
+                onClick={handleSendNotes}
+                disabled={selectedNotesToSend.length === 0}
+              >
+                Send to Topic
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
+  
+  // Render tab content based on active tab
+  const renderTabContent = () => {
+    if (activeTab === 'notes') {
+      return (
+        <div className="topic-notes-tab">
+          {/* Content Section */}
+          <div className="topic-content-section">
+            {isEditing ? (
+              <div className="content-edit-container">
+                <textarea
+                  value={content}
+                  onChange={(e) => setContent(e.target.value)}
+                  className="content-textarea"
+                  placeholder="Add links, notes, or any content about this topic..."
+                />
+                <div className="content-actions">
+                  <button 
+                    onClick={handleSaveContent}
+                    className="primary-button"
+                  >
+                    Save
+                  </button>
+                  <button 
+                    onClick={() => {
+                      setContent(topic?.content || '')
+                      setIsEditing(false)
+                    }}
+                    className="secondary-button"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="content-display-container">
+                {content ? (
+                  <div className="content-text">
+                    {content.split('\n').map((line, i) => (
+                      <p key={i}>{line}</p>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="empty-content">
+                    {isOwner ? 'No content yet. Click Edit to add content!' : 'No content has been added to this topic yet.'}
+                  </p>
+                )}
+                {isOwner && (
+                  <button 
+                    onClick={() => setIsEditing(true)}
+                    className="edit-button"
+                  >
+                    Edit
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
+          
+          {/* Sent Notes Section */}
+          <div className="sent-notes-section">
+            <div className="sent-notes-header">
+              <h3>Notes in this Topic</h3>
+              <button 
+                className="send-note-button"
+                onClick={() => setShowSendNoteModal(true)}
+              >
+                Send Notes to Topic
+              </button>
+            </div>
+            
+            {sentNotes.length > 0 ? (
+              <div className="sent-notes-list">
+                {sentNotes
+                  .sort((a, b) => new Date(b.sentAt || b.timestamp) - new Date(a.sentAt || a.timestamp))
+                  .map(note => (
+                    <div key={note.id} className="sent-note-item">
+                      <div className="sent-note-header">
+                        <div className="note-author-info">
+                          {note.profilePic ? (
+                            <img 
+                              src={note.profilePic} 
+                              alt={`${note.author}'s avatar`}
+                              className="author-avatar"
+                            />
+                          ) : (
+                            <div className="author-avatar-placeholder">
+                              {note.author ? note.author.charAt(0).toUpperCase() : '?'}
+                            </div>
+                          )}
+                          <span className="note-author-name">{note.author}</span>
+                        </div>
+                        <span className="sent-note-date">
+                          {formatDate(note.sentAt || note.timestamp)}
+                        </span>
+                      </div>
+                      <p className="sent-note-content">{note.content}</p>
+                    </div>
+                  ))
+              }
+              </div>
+            ) : (
+              <p className="empty-sent-notes">No notes have been added to this topic yet.</p>
+            )}
+          </div>
+        </div>
+      )
+    } else if (activeTab === 'comments') {
+      return (
+        <div className="topic-comments-tab">
+          <h3 className="section-title">Comments</h3>
+          
+          {/* Add comment form */}
+          <form onSubmit={handleAddComment} className="comment-form">
+            <textarea
+              value={newComment}
+              onChange={(e) => setNewComment(e.target.value)}
+              placeholder="Add a comment..."
+              className="comment-textarea"
+              required
+            />
+            <button type="submit" className="comment-submit">
+              Post Comment
+            </button>
+          </form>
+          
+          {/* Comments list */}
+          <div className="comments-list">
+            {comments.length > 0 ? (
+              <div className="comments-items">
+                {comments
+                  .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+                  .map((comment) => (
+                    <div key={comment.id} className="comment-item">
+                      <div className="comment-header">
+                        <div className="comment-author">
+                          {comment.profilePic ? (
+                            <img 
+                              src={comment.profilePic} 
+                              alt={`${comment.author}'s avatar`}
+                              className="comment-avatar"
+                              onClick={() => navigateToUserProfile(comment.authorId)}
+                              style={{ cursor: 'pointer' }}
+                            />
+                          ) : (
+                            <div 
+                              className="comment-avatar-placeholder"
+                              onClick={() => navigateToUserProfile(comment.authorId)}
+                              style={{ cursor: 'pointer' }}
+                            >
+                              {comment.author ? comment.author.charAt(0).toUpperCase() : '?'}
+                            </div>
+                          )}
+                          <span 
+                            className="author-name clickable"
+                            onClick={() => navigateToUserProfile(comment.authorId)}
+                            style={{ 
+                              cursor: 'pointer', 
+                              color: '#2563eb',
+                              textDecoration: 'underline'
+                            }}
+                          >
+                            {comment.author || 'Anonymous'}
+                          </span>
+                        </div>
+                        <span className="comment-date">
+                          {new Date(comment.createdAt).toLocaleDateString()}
+                        </span>
+                      </div>
+                      <p className="comment-content">{comment.content}</p>
+                    </div>
+                  ))
+                }
+              </div>
+            ) : (
+              <p className="empty-comments">No comments yet. Be the first to comment!</p>
+            )}
+          </div>
+        </div>
+      )
+    }
+  }
 
   if (isLoading) {
     return <div className="loading-container">Loading topic data...</div>
@@ -453,6 +786,9 @@ export default function TopicContent({ topicId, userId, onTopicDeleted, onBookma
 
   return (
     <div className="topic-content-wrapper">
+      {/* Send Note Modal */}
+      {showSendNoteModal && <SendNoteModal />}
+      
       {/* Main Topic Content with white background */}
       <div className="topic-content">
         {isSettingsOpen && isOwner ? (
@@ -519,190 +855,30 @@ export default function TopicContent({ topicId, userId, onTopicDeleted, onBookma
               </div>
             </div>
             
-            {/* Pinned Notes Section */}
-            <div className="pinned-notes-section">
-              <h3 className="section-title">Pinned Resources</h3>
-              
-              {pinnedNotes.length > 0 ? (
-                <div className="pinned-notes-grid">
-                  {pinnedNotes.map(note => (
-                    <div key={note.id} className="pinned-note-card">
-                      <div className="pinned-note-content">
-                        <div className="pinned-note-header">
-                          <div className="note-author-info">
-                            {note.profilePic ? (
-                              <img 
-                                src={note.profilePic} 
-                                alt={`${note.author}'s avatar`}
-                                className="avatar-small"
-                              />
-                            ) : (
-                              <div className="avatar-placeholder-small">
-                                {note.author ? note.author.charAt(0).toUpperCase() : '?'}
-                              </div>
-                            )}
-                            <span className="note-author-name">{note.author}</span>
-                          </div>
-                          
-                          {isOwner && (
-                            <button 
-                              className="unpin-button"
-                              onClick={() => handleUnpinNote(note.id)}
-                              title="Unpin this note"
-                            >
-                              📌
-                            </button>
-                          )}
-                        </div>
-                        
-                        <p className="pinned-note-text">{note.content}</p>
-                        
-                        <div className="pinned-note-footer">
-                          <span className="pinned-date">{formatDate(note.timestamp)}</span>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="empty-pinned-notes">
-                  {isOwner ? (
-                    <p>No pinned resources yet. Pin notes related to this topic to keep important information easily accessible.</p>
-                  ) : (
-                    <p>No pinned resources for this topic yet.</p>
-                  )}
-                </div>
-              )}
+            {/* Tabs Navigation */}
+            <div className="topic-tabs-navigation">
+              <div className="topic-main-tabs">
+                <button 
+                  className={`topic-main-tab ${activeTab === 'notes' ? 'active-main-tab' : ''}`}
+                  onClick={() => setActiveTab('notes')}
+                >
+                  Notes
+                </button>
+                <button 
+                  className={`topic-main-tab ${activeTab === 'comments' ? 'active-main-tab' : ''}`}
+                  onClick={() => setActiveTab('comments')}
+                >
+                  Comments ({comments.length})
+                </button>
+              </div>
             </div>
             
-            {/* Content Section */}
-            <div className="topic-content-section">
-              {isEditing ? (
-                <div className="content-edit-container">
-                  <textarea
-                    value={content}
-                    onChange={(e) => setContent(e.target.value)}
-                    className="content-textarea"
-                    placeholder="Add links, notes, or any content about this topic..."
-                  />
-                  <div className="content-actions">
-                    <button 
-                      onClick={handleSaveContent}
-                      className="primary-button"
-                    >
-                      Save
-                    </button>
-                    <button 
-                      onClick={() => {
-                        setContent(topic?.content || '')
-                        setIsEditing(false)
-                      }}
-                      className="secondary-button"
-                    >
-                      Cancel
-                    </button>
-                  </div>
-                </div>
-              ) : (
-                <div className="content-display-container">
-                  {content ? (
-                    <div className="content-text">
-                      {content.split('\n').map((line, i) => (
-                        <p key={i}>{line}</p>
-                      ))}
-                    </div>
-                  ) : (
-                    <p className="empty-content">
-                      {isOwner ? 'No content yet. Click Edit to add content!' : 'No content has been added to this topic yet.'}
-                    </p>
-                  )}
-                  {isOwner && (
-                    <button 
-                      onClick={() => setIsEditing(true)}
-                      className="edit-button"
-                    >
-                      Edit
-                    </button>
-                  )}
-                </div>
-              )}
+            {/* Tab Content */}
+            <div className="topic-tab-content">
+              {renderTabContent()}
             </div>
           </>
         )}
-      </div>
-      
-      {/* Comments Section Wrapper */}
-      <div className="comments-section-wrapper">
-        <div className="comments-section">
-          <h3 className="comments-title">Comments</h3>
-          
-          {/* Add comment form */}
-          <form onSubmit={handleAddComment} className="comment-form">
-            <textarea
-              value={newComment}
-              onChange={(e) => setNewComment(e.target.value)}
-              placeholder="Add a comment..."
-              className="comment-textarea"
-              required
-            />
-            <button type="submit" className="comment-submit">
-              Post Comment
-            </button>
-          </form>
-          
-          {/* Comments list */}
-          <div className="comments-list-container">
-            {comments.length > 0 ? (
-              <div className="comments-list">
-                {comments
-                  .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
-                  .map((comment) => (
-                    <div key={comment.id} className="comment-item">
-                      <div className="comment-header">
-                        <div className="comment-author">
-                          {comment.profilePic ? (
-                            <img 
-                              src={comment.profilePic} 
-                              alt={`${comment.author}'s avatar`}
-                              className="comment-avatar"
-                              onClick={() => navigateToUserProfile(comment.authorId)}
-                              style={{ cursor: 'pointer' }}
-                            />
-                          ) : (
-                            <div 
-                              className="comment-avatar-placeholder"
-                              onClick={() => navigateToUserProfile(comment.authorId)}
-                              style={{ cursor: 'pointer' }}
-                            >
-                              {comment.author ? comment.author.charAt(0).toUpperCase() : '?'}
-                            </div>
-                          )}
-                          <span 
-                            className="author-name clickable"
-                            onClick={() => navigateToUserProfile(comment.authorId)}
-                            style={{ 
-                              cursor: 'pointer', 
-                              color: '#2563eb',
-                              textDecoration: 'underline'
-                            }}
-                          >
-                            {comment.author || 'Anonymous'}
-                          </span>
-                        </div>
-                        <span className="comment-date">
-                          {new Date(comment.createdAt).toLocaleDateString()}
-                        </span>
-                      </div>
-                      <p className="comment-content">{comment.content}</p>
-                    </div>
-                  ))
-                }
-              </div>
-            ) : (
-              <p className="empty-comments">No comments yet. Be the first to comment!</p>
-            )}
-          </div>
-        </div>
       </div>
     </div>
   )

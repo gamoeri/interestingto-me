@@ -1,4 +1,15 @@
-/* Notes section styles */
+/*
+ * notes.css
+ * This file affects ONLY the NotesSection component (NotesSection.jsx)
+ * All selectors have been scoped to .notes-section-redesigned to prevent conflicts
+ */
+
+/* Ensure consistent box sizing */
+* {
+  box-sizing: border-box;
+}
+
+/* Main container for NotesSection */
 .notes-section-redesigned {
   padding: 0;
   background-color: #ffffff;
@@ -10,21 +21,162 @@
   min-height: 100%;
   position: relative;
   margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
+
+/* Profile Banner - FIXED positioning to prevent layout issues with filters */
+.notes-section-redesigned .profile-banner {
+  height: 180px;
+  width: 100%;
+  background-size: cover;
+  background-position: center;
+  background-color: #3b82f6; /* Fallback color if no image */
+  position: relative;
+  z-index: 1; /* Ensure proper stacking */
+}
+
+/* Profile Info Container - FIXED positioning to prevent layout shift */
+.notes-section-redesigned .profile-info-container {
+  position: absolute; /* Changed from relative to absolute */
+  bottom: -40px; /* Position it overlapping the bottom of banner */
+  left: 24px;
+  z-index: 2; /* Ensure it stays above the banner */
+}
+
+.notes-section-redesigned .profile-pic-container {
+  width: 88px;
+  height: 88px;
+  border-radius: 50%;
+  border: 4px solid white;
+  overflow: hidden;
+  background-color: white;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.notes-section-redesigned .profile-pic {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
+  border: 2px solid #e5e7eb;
+}
+
+.notes-section-redesigned .profile-pic-placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #3b82f6;
+  color: white;
+  font-weight: 600;
+  font-size: 2rem;
+  border-radius: 50%;
+}
+
+/* Profile Details - Added margin-top to account for the overlapping avatar */
+
+
+.notes-section-redesigned .profile-info-main {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: 0px 24px;
+}
+
+.notes-section-redesigned .profile-name {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #111827;
+  margin: 0 0 4px 0;
+}
+
+.notes-section-redesigned .profile-bio {
+  font-size: 0.95rem;
+  color: #4b5563;
+  margin: 0 0 8px 0;
+  line-height: 1.4;
+  max-width: 80%;
+}
+
+.notes-section-redesigned .edit-profile-button {
+  background-color: transparent;
+  border: 1px solid #d1d5db;
+  color: #4b5563;
+  border-radius: 20px;
+  padding: 6px 16px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.notes-section-redesigned .edit-profile-button:hover {
+  background-color: #f3f4f6;
+  border-color: #9ca3af;
+}
+
+/* Topic Tabs - FIXED to ensure they don't affect banner sizing */
+.notes-section-redesigned .topic-tabs-container {
+  position: sticky;
+  top: 0; /* Stick to the top of the viewport */
+  z-index: 10; /* Ensure it appears above other content */
+  background-color: #f9fafb; /* Ensure background is not transparent */
+  border-bottom: 1px solid #e5e7eb;
+  padding: 12px 24px;
+  margin: 0;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05); /* Add subtle shadow when sticky */
+  transition: box-shadow 0.2s ease;
+  
+}
+
+.notes-section-redesigned .topic-tabs-wrap {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding-bottom: 8px;
+}
+
+.notes-section-redesigned .topic-tab {
+  padding: 6px 12px;
+  border-radius: 16px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  background-color: transparent;
+  border: 1px solid #e5e7eb;
+  color: #4b5563;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.notes-section-redesigned .topic-tab.active-tab {
+  background-color: #3b82f6;
+  color: white;
+  border-color: #3b82f6;
+}
+
+.notes-section-redesigned .topic-tab:hover:not(.active-tab) {
+  background-color: #f3f4f6;
 }
 
 /* New Note Input */
-.new-note-input {
+.notes-section-redesigned .new-note-input {
   padding: 16px 24px;
   border-bottom: 1px solid #f0f0f0;
   position: relative;
 }
 
-.input-container {
+.notes-section-redesigned .input-container {
   display: flex;
   flex-direction: column;
 }
 
-.note-input {
+.notes-section-redesigned .note-input {
   width: 100%;
   min-height: 80px;
   resize: vertical;
@@ -38,42 +190,28 @@
   background-color: transparent;
 }
 
-.note-input::placeholder {
+.notes-section-redesigned .note-input::placeholder {
   color: #9ca3af;
 }
 
-.input-actions {
+.notes-section-redesigned .input-actions {
   display: flex;
   justify-content: space-between;
   align-items: center;
 }
 
-.topic-selection {
-  max-width: 200px;
-}
-
-.topic-select {
-  border: 1px solid #e5e7eb;
-  padding: 8px 12px;
-  border-radius: 20px;
-  font-size: 0.875rem;
-  color: #4b5563;
-  background-color: #f9fafb;
-  outline: none;
-}
-
-.input-buttons {
+.notes-section-redesigned .input-info {
   display: flex;
   align-items: center;
   gap: 12px;
 }
 
-.char-count {
+.notes-section-redesigned .char-count {
   color: #6b7280;
   font-size: 0.875rem;
 }
 
-.post-button {
+.notes-section-redesigned .post-button {
   background-color: #3b82f6;
   color: white;
   border: none;
@@ -85,123 +223,176 @@
   transition: background-color 0.2s ease;
 }
 
-.post-button:hover {
+.notes-section-redesigned .post-button:hover {
   background-color: #2563eb;
 }
 
-.post-button:disabled {
+.notes-section-redesigned .post-button:disabled {
   background-color: #9ca3af;
   cursor: not-allowed;
 }
 
-/* Notes Timeline */
-.notes-timeline {
-  padding: 0;
-  background-color: #ffffff;
+/* Selected topic indicator */
+.notes-section-redesigned .selected-topic-indicator {
+  background-color: #f3f4f6;
+  padding: 0.5rem;
+  border-radius: 0.5rem;
+  margin-bottom: 0.5rem;
+  font-size: 0.9rem;
+  color: #4b5563;
 }
 
-.timeline-entries {
+.notes-section-redesigned .selected-topic-indicator .topic-name {
+  font-weight: 600;
+  color: #4f46e5;
+}
+
+/* Notes Timeline - FIXED to have proper scrolling behavior */
+.notes-section-redesigned .notes-timeline {
+  flex: 1; /* Take remaining space */
   display: flex;
   flex-direction: column;
   background-color: #ffffff;
+  width: 100%;
+  position:relative;
+
 }
 
-.timeline-entry {
-  padding: 20px 24px;
+.notes-section-redesigned .timeline-entries {
+  flex: 1; /* Make sure this takes up the available space */
   display: flex;
-  gap: 16px;
-  border-bottom: 1px solid #f0f0f0;
-  transition: background-color 0.2s ease;
+  flex-direction: column;
   background-color: #ffffff;
+  overflow-y: auto; /* Makes ONLY this section scrollable */
 }
 
-.timeline-entry:hover {
+/* Timeline Entry */
+.notes-section-redesigned .timeline-entry {
+  background-color: white;
+  overflow: hidden;
+  transition: background-color 0.2s ease;
+  padding-bottom: 0px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.notes-section-redesigned .timeline-entry:hover {
   background-color: #f9fafb;
 }
 
-.entry-active {
+.notes-section-redesigned .entry-active {
   background-color: #f3f4f6;
 }
 
-.entry-avatar {
+/* Topic Banner for notes CSS */
+.notes-section-redesigned .entry-content-container {
+  padding: 12px 16px; /* This creates the inset padding */
+  display: block; /* Ensure it's visible */
+}
+
+.notes-section-redesigned .note-topic-banner {
+  width: 100%;
+  padding: 6px 12px;
+  background: #f5f5f5;
+  border-radius: 4px;
+  margin-bottom: 8px;
+  white-space: nowrap;
+  overflow-x: auto;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  display: none;
+}
+
+.notes-section-redesigned .topic-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+/* Main Content */
+.notes-section-redesigned .note-main-content {
+  display: flex;
+  padding: 0; /* Removed padding since parent has it */
+}
+
+/* Avatar Styles */
+.notes-section-redesigned .entry-avatar {
+  margin-right: 0.75rem;
+  min-width: 40px;
   flex-shrink: 0;
 }
 
-.entry-avatar .avatar-image,
-.entry-avatar .avatar-placeholder {
-  width: 48px;
-  height: 48px;
+.notes-section-redesigned .avatar-image,
+.notes-section-redesigned .avatar-placeholder {
+  width: 40px;
+  height: 40px;
   border-radius: 50%;
+  overflow: hidden;
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
-.entry-avatar .avatar-image {
+.notes-section-redesigned .avatar-image {
   object-fit: cover;
   border: 2px solid #e5e7eb;
 }
 
-.entry-avatar .avatar-placeholder {
-  background-color: #3b82f6;
+.notes-section-redesigned .avatar-placeholder {
+  background-color: #6366f1;
   color: white;
   font-weight: 600;
   font-size: 1.25rem;
 }
 
-.entry-content {
+/* Entry Content */
+.notes-section-redesigned .entry-details {
   flex-grow: 1;
+  flex: 1;
 }
 
-.entry-header {
+.notes-section-redesigned .entry-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 8px;
+  margin-bottom: 4px;
 }
 
-.author-info {
+.notes-section-redesigned .author-info {
   display: flex;
   align-items: center;
   gap: 8px;
 }
 
-.entry-author {
-  font-weight: 600;
+.notes-section-redesigned .entry-author {
+  font-weight: 500;
   color: #111827;
   font-size: 0.95rem;
 }
 
-.topic-badge {
-  display: inline-block;
-  background-color: #f3f4f6;
-  color: #4b5563;
-  font-size: 0.75rem;
-  padding: 2px 8px;
-  border-radius: 12px;
-  font-weight: 500;
-}
-
-.entry-time {
+.notes-section-redesigned .entry-time {
   color: #6b7280;
-  font-size: 0.8rem;
+  font-size: 0.85rem;
 }
 
-.entry-text {
-  margin: 0 0 12px 0;
+.notes-section-redesigned .entry-text {
+  margin: 0 0 8px 0;
   color: #111827;
   line-height: 1.6;
   font-size: 0.95rem;
   word-break: break-word;
+  margin-bottom: 0.75rem;
 }
 
-.entry-actions {
+/* Entry Actions */
+.notes-section-redesigned .entry-actions {
   display: flex;
   gap: 16px;
 }
 
-.reply-action,
-.delete-action {
+.notes-section-redesigned .reply-action,
+.notes-section-redesigned .delete-action,
+.notes-section-redesigned .pin-action {
   background: none;
   border: none;
   color: #6b7280;
@@ -211,396 +402,394 @@
   transition: color 0.2s ease;
 }
 
-.reply-action:hover {
-  color: #3b82f6;
+.notes-section-redesigned .reply-action:hover,
+.notes-section-redesigned .pin-action:hover {
+  color: #4f46e5;
 }
 
-.delete-action:hover {
+.notes-section-redesigned .delete-action:hover {
   color: #ef4444;
 }
 
-.empty-timeline {
+.notes-section-redesigned .empty-timeline {
   padding: 32px 24px;
   text-align: center;
 }
 
-.empty-timeline p {
+.notes-section-redesigned .empty-timeline p {
   color: #6b7280;
   font-size: 0.95rem;
 }
 
-.delete-note-button {
+/* Like action */
+.notes-section-redesigned .like-action {
   background: none;
   border: none;
   color: #6b7280;
   font-size: 0.85rem;
   cursor: pointer;
-  padding: 4px;
-  line-height: 1;
-  opacity: 0;
-  transition: opacity 0.2s ease, color 0.2s ease;
+  padding: 6px 0;
+  transition: color 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 4px;
 }
 
-.note-item:hover .delete-note-button {
-  opacity: 0.6;
+.notes-section-redesigned .like-action:hover {
+  color: #4f46e5;
 }
 
-.delete-note-button:hover {
-  opacity: 1;
-  color: #ef4444;
+.notes-section-redesigned .like-action.is-liked {
+  color: #4f46e5;
+  font-weight: 500;
 }
 
-/* NEW STYLES BELOW */
+/* Topic badge styles */
+.notes-section-redesigned .topic-banner-badge {
+  display: inline-block;
+  margin-right: 8px;
+  padding: 0px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: #4f46e5;
+  cursor: pointer;
+}
 
-/* Topic Tabs Navigation */
-.topic-tabs-container {
-  padding: 12px 24px;
-  margin: 0;
-  border-bottom: 1px solid #e5e7eb;
+.notes-section-redesigned .topic-banner-badge:hover {
+  text-decoration: underline;
+}
+
+.notes-section-redesigned .topic-badge-prefix {
+  color: #6b7280;
+  margin-right: 2px;
+}
+
+/* Change topic button */
+.notes-section-redesigned .change-topic-button {
+  background: none;
+  border: none;
+  color: #6b7280;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: color 0.2s ease;
+}
+
+.notes-section-redesigned .change-topic-button:hover {
+  color: #4f46e5;
+}
+
+/* Add badge link */
+.notes-section-redesigned .add-badge-link {
+  background-color: transparent;
+  border: none;
+  font-size: 0.85rem;
+  color: #4376dd;
+  cursor: pointer;
+  padding: 0;
+  margin-left: 8px;
+  text-decoration: none;
+  transition: color 0.1s;
+}
+
+.notes-section-redesigned .add-badge-link:hover {
+  color: #4f46e5;
+}
+
+/* Topic dropdown portal */
+.topic-dropdown-portal {
+  position: fixed;
+  z-index: 1000;
+}
+
+/* Topic dropdown styling */
+.topic-change-dropdown {
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  min-width: 160px;
+  overflow: hidden;
+}
+
+.dropdown-header {
+  padding: 8px 12px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: #6b7280;
+  border-bottom: 1px solid #f3f4f6;
   background-color: #f9fafb;
 }
 
-.topic-tabs-wrap {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  padding-bottom: 8px;
-}
-
-.topic-tab {
-  padding: 6px 12px;
-  border-radius: 16px;
-  font-size: 0.9rem;
-  font-weight: 500;
-  background-color: transparent;
-  border: 1px solid #e5e7eb;
-  color: #4b5563;
-  white-space: nowrap;
+.dropdown-item {
+  padding: 8px 12px;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: background-color 0.2s;
+  font-size: 0.9rem;
+  display: flex;
+  align-items: center;
 }
 
-.topic-tab.active-tab {
-  background-color: #3b82f6;
-  color: white;
-  border-color: #3b82f6;
-}
-
-.topic-tab:hover:not(.active-tab) {
+.dropdown-item:hover {
   background-color: #f3f4f6;
 }
 
-/* Multiple Topic Selection */
-.topic-selection-multiple {
-  position: relative;
-  margin-bottom: 12px;
-  min-width: 220px;
+.dropdown-item.active-topic {
+  color: #4f46e5;
+  background-color: rgba(79, 70, 229, 0.1);
+  font-weight: 500;
 }
 
-.selected-topics-container {
-  border: 1px solid #e5e7eb;
-  border-radius: 6px;
-  padding: 8px 12px;
-  cursor: pointer;
+.dropdown-item.active-topic::after {
+  content: "✓";
+  margin-left: auto;
+  color: #4f46e5;
+}
+
+/* Styles for the reply view when accessed from NotesSection */
+.notes-section-redesigned .replies-panel {
   display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
+  flex-direction: column;
+  background-color: #ffffff;
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+}
+
+.notes-section-redesigned .replies-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 24px;
+  border-bottom: 1px solid #eef1f6;
   background-color: white;
-  min-height: 38px;
-  align-items: center;
 }
 
-.selected-topics-badges {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-}
-
-.topic-badge {
-  background-color: #e5e7eb;
-  color: #4b5563;
-  padding: 4px 10px;
-  border-radius: 12px;
-  font-size: 0.8rem;
-  display: inline-flex;
-  align-items: center;
-  cursor: pointer;
-  transition: background-color 0.2s ease;
-}
-
-.topic-badge:hover {
-  background-color: #d1d5db;
-}
-
-.remove-topic-badge {
-  margin-left: 4px;
-  font-size: 0.9rem;
-  line-height: 1;
-  border: none;
+.notes-section-redesigned .back-to-feed-button {
   background: none;
+  border: none;
+  color: #3b82f6;
+  font-size: 15px;
+  font-weight: 500;
   cursor: pointer;
-  padding: 0 2px;
-  color: #6b7280;
-}
-
-.select-topics-placeholder {
-  color: #9ca3af;
-}
-
-.topics-dropdown-menu {
-  position: absolute;
-  top: 100%;
-  left: 0;
-  right: 0;
-  z-index: 10;
-  background-color: white;
-  border: 1px solid #e5e7eb;
-  border-radius: 6px;
-  margin-top: 4px;
-  max-height: 200px;
-  overflow-y: auto;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-}
-
-.topic-option {
+  display: flex;
+  align-items: center;
   padding: 8px 12px;
-  cursor: pointer;
+  border-radius: 6px;
+  transition: background-color 0.2s;
+}
+
+.notes-section-redesigned .back-to-feed-button:hover {
+  background-color: rgba(59, 130, 246, 0.1);
+}
+
+.notes-section-redesigned .replies-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: #111827;
+  margin: 0;
+}
+
+.notes-section-redesigned .original-note-container {
+  padding: 20px 24px;
+  border-bottom: 1px solid #eef1f6;
+  background-color: #f9fafb;
+}
+
+.notes-section-redesigned .reply-form-container {
+  padding: 20px 24px;
+  border-bottom: 1px solid #eef1f6;
+  background-color: white;
+}
+
+.notes-section-redesigned .reply-textarea {
+  width: 100%;
+  min-height: 100px;
+  resize: vertical;
+  padding: 14px;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  font-size: 15px;
+  color: #111827;
+  font-family: inherit;
+  outline: none;
+  margin-bottom: 12px;
+  background-color: #f9fafb;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  box-sizing: border-box;
+}
+
+.notes-section-redesigned .reply-form-actions {
   display: flex;
   justify-content: space-between;
   align-items: center;
 }
 
-.topic-option:hover {
-  background-color: #f3f4f6;
-}
-
-.topic-option.selected {
-  background-color: #e0f2fe;
-}
-
-.topic-option-selected {
-  color: #3b82f6;
-  font-weight: bold;
-}
-
-/* Note Topics Display */
-.note-topics {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  margin: 8px 0;
-}
-
-/* Pin Action Button */
-.pin-action-container {
-  display: inline-block;
-}
-
-.pin-action {
-  background: none;
-  border: none;
-  color: #6b7280;
-  font-size: 0.85rem;
-  cursor: pointer;
-  padding: 0;
-  display: inline-flex;
-  align-items: center;
-}
-
-.pin-action::before {
-  content: "📌";
-  margin-right: 4px;
-  font-size: 1rem;
-}
-
-
-/* Pin Action Button and Menu */
-.pin-action-container {
-  display: inline-block;
-  position: relative;
-}
-
-.pin-action {
-  background: none;
-  border: none;
-  color: #6b7280;
-  font-size: 0.85rem;
-  cursor: pointer;
-  padding: 0;
-  display: inline-flex;
-  align-items: center;
-}
-
-.pin-action::before {
-  content: "📌";
-  margin-right: 4px;
-  font-size: 1rem;
-}
-
-.pin-action.is-pinned {
-  color: #3b82f6;
-  font-weight: 500;
-}
-
-.pin-action.is-pinned::before {
-  content: "📌";
-  color: #3b82f6;
-}
-
-/* Pin dropdown menu */
-.pin-menu-container {
-  position: relative;
-}
-
-.pin-dropdown-menu {
-  position: absolute;
-  top: 100%;
-  left: 0;
-  z-index: 50;
+.notes-section-redesigned .replies-list-container {
+  padding: 20px 24px;
   background-color: white;
-  border: 1px solid #e5e7eb;
-  border-radius: 6px;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-  width: 150px;
-  margin-top: 4px;
+  flex: 1;
+  overflow-y: auto;
 }
 
-.pin-dropdown-title {
-  padding: 8px 12px;
-  font-size: 0.8rem;
-  color: #6b7280;
-  border-bottom: 1px solid #e5e7eb;
-  font-weight: 500;
+.notes-section-redesigned .replies-subheader {
+  font-size: 15px;
+  font-weight: 600;
+  color: #4b5563;
+  margin: 0 0 20px 0;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #f3f4f6;
 }
 
-.pin-dropdown-item {
-  padding: 8px 12px;
-  font-size: 0.9rem;
-  cursor: pointer;
-  transition: background-color 0.2s ease;
+.notes-section-redesigned .replies-items {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
 }
 
-.pin-dropdown-item:hover {
-  background-color: #f3f4f6;
+.notes-section-redesigned .reply-item {
+  display: flex;
+  gap: 14px;
+  padding: 16px;
+  border-radius: 12px;
+  background-color: #f9fafb;
+  transition: background-color 0.2s;
 }
 
-/* Mention-based topic selection */
-.selected-topics-display {
+.notes-section-redesigned .reply-avatar {
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;
+}
+
+.notes-section-redesigned .reply-content {
+  flex: 1;
+}
+
+.notes-section-redesigned .reply-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
   margin-bottom: 8px;
 }
 
-.topic-badges-container {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
+.notes-section-redesigned .reply-author {
+  font-size: 14px;
+  font-weight: 600;
+  color: #111827;
 }
 
-.topic-badge-large {
-  display: inline-flex;
+.notes-section-redesigned .reply-time {
+  font-size: 13px;
+  color: #6b7280;
+}
+
+.notes-section-redesigned .reply-text {
+  margin: 0;
+  font-size: 15px;
+  line-height: 1.5;
+  color: #111827;
+  word-break: break-word;
+}
+
+.notes-section-redesigned .empty-replies {
+  text-align: center;
+  padding: 30px 0;
+  color: #6b7280;
+  font-style: italic;
+  font-size: 15px;
+}
+
+
+
+
+.notes-section-redesigned .profile-banner {
+  height: 180px !important; /* Force fixed height */
+  min-height: 180px !important; /* Ensure minimum height */
+  width: 100%;
+  background-size: cover;
+  background-position: center;
+  position: relative;
+  z-index: 1;
+  overflow: visible;
+}
+
+/* Move avatar out of document flow completely */
+.notes-section-redesigned .profile-info-container {
+  position: absolute !important; /* Force absolute positioning */
+  bottom: -40px;
+  left: 24px;
+  z-index: 2;
+  width: auto;
+  height: auto;
+}
+
+/* Fix profile details spacing */
+.notes-section-redesigned .profile-details {
+  padding-top: 48px !important; /* Make room for the avatar */
+  position: relative;
+  z-index: 1;
+}
+
+/* 
+ * Inline Topic Badges CSS 
+ * Add this to your notes.css file
+ */
+
+/* Author info styling - ensure it can accommodate badges */
+.notes-section-redesigned .author-info {
+  display: flex;
   align-items: center;
-  background-color: #e5e7eb;
-  color: #4b5563;
-  padding: 4px 10px;
-  border-radius: 16px;
-  font-size: 0.9rem;
+  flex-wrap: wrap; /* Allow wrapping on small screens */
+  gap: 6px; /* Space between items */
+}
+
+/* Entry author styling */
+.notes-section-redesigned .entry-author {
   font-weight: 500;
-  transition: background-color 0.2s ease;
+  color: #111827;
+  font-size: 0.95rem;
 }
 
-.topic-badge-large:hover {
-  background-color: #d1d5db;
-}
-
-.topic-badge-prefix {
-  color: #6b7280;
-  margin-right: 2px;
-}
-
-.remove-topic-badge {
-  margin-left: 6px;
-  font-size: 1rem;
-  line-height: 1;
-  border: none;
-  background: none;
-  cursor: pointer;
-  padding: 0 2px;
-  color: #6b7280;
-}
-
-.remove-topic-badge:hover {
-  color: #ef4444;
-}
-
-/* Mention menu */
-.mention-menu {
-  position: absolute;
-  z-index: 50;
-  background-color: white;
-  border: 1px solid #e5e7eb;
-  border-radius: 6px;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-  max-height: 200px;
-  overflow-y: auto;
-  min-width: 150px;
-  max-width: 250px;
-}
-
-.mention-item {
-  padding: 8px 12px;
-  cursor: pointer;
-  transition: background-color 0.2s ease;
-  font-size: 0.9rem;
-}
-
-.mention-item:hover {
-  background-color: #f3f4f6;
-}
-
-.mention-prefix {
-  color: #6b7280;
-  margin-right: 4px;
-}
-
-.mention-no-results {
-  padding: 8px 12px;
-  color: #6b7280;
-  font-size: 0.9rem;
-  font-style: italic;
-}
-
-.mention-hint {
-  color: #9ca3af;
-  font-size: 0.8rem;
-  font-style: italic;
-}
-
-.input-info {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-/* Topic badges in notes */
-.note-topics {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  margin: 8px 0;
-}
-
-.topic-badge {
+/* NEW: Inline topic badge */
+.notes-section-redesigned .inline-topic-badge {
   display: inline-flex;
   align-items: center;
-  background-color: #e5e7eb;
-  color: #4b5563;
-  padding: 3px 8px;
+  padding: 2px 8px;
+  background-color: #EEF2FF; /* Light indigo background */
+  color: #4F46E5; /* Indigo text */
   border-radius: 12px;
   font-size: 0.8rem;
   font-weight: 500;
   cursor: pointer;
   transition: background-color 0.2s ease;
+  margin-left: 4px;
 }
 
-.topic-badge:hover {
-  background-color: #d1d5db;
+.notes-section-redesigned .inline-topic-badge:hover {
+  background-color: #E0E7FF; /* Slightly darker on hover */
+}
+
+/* Topic badge prefix (@) */
+.notes-section-redesigned .topic-badge-prefix {
+  color: #6366F1; /* Slightly lighter indigo */
+  margin-right: 2px;
+}
+
+/* Add badge link - for notes without a topic */
+.notes-section-redesigned .add-badge-link {
+  background: none;
+  border: none;
+  font-size: 0.8rem;
+  color: #6B7280; /* Gray text */
+  cursor: pointer;
+  padding: 2px 6px;
+  border-radius: 12px;
+  border: 1px dashed #D1D5DB; /* Dashed border */
+  transition: all 0.2s ease;
+}
+
+.notes-section-redesigned .add-badge-link:hover {
+  color: #4F46E5;
+  border-color: #4F46E5;
+  background-color: #F9FAFB;
 }

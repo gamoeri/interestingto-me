@@ -1,0 +1,193 @@
+/* Styles for topic change feature */
+
+/* Topic banner adjustments for dropdown */
+.note-topic-banner {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    position: relative;
+  }
+  
+  /* Topic badges container */
+  .topic-badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+  
+  /* No topic badge */
+  .no-topic-badge {
+    font-size: 0.85rem;
+    color: #9ca3af;
+    font-style: italic;
+  }
+  
+  /* Change topic button */
+  .change-topic-button {
+    background: none;
+    border: none;
+    color: #6b7280;
+    font-size: 1.2rem;
+    cursor: pointer;
+    padding: 2px 8px;
+    margin-left: auto;
+    transition: color 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+  }
+  
+  .change-topic-button:hover {
+    color: #4f46e5;
+    background-color: rgba(79, 70, 229, 0.1);
+  }
+  
+  /* Topic change dropdown */
+  .topic-change-dropdown {
+    position: absolute;
+    top: 100%;
+    right: 0;
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    z-index: 50;
+    min-width: 160px;
+    margin-top: 4px;
+    overflow: hidden;
+  }
+  
+  .dropdown-header {
+    padding: 8px 12px;
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: #6b7280;
+    border-bottom: 1px solid #f3f4f6;
+    background-color: #f9fafb;
+  }
+  
+  .dropdown-item {
+    padding: 8px 12px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+    font-size: 0.9rem;
+    display: flex;
+    align-items: center;
+  }
+  
+  .dropdown-item:hover {
+    background-color: #f3f4f6;
+  }
+  
+  .dropdown-item.active-topic {
+    color: #4f46e5;
+    background-color: rgba(79, 70, 229, 0.1);
+    font-weight: 500;
+  }
+  
+  .dropdown-item.active-topic::after {
+    content: "✓";
+    margin-left: auto;
+    color: #4f46e5;
+  }
+  
+  /* Make topic badges clickable */
+  .topic-banner-badge {
+    display: inline-block;
+    margin-right: 8px;
+    cursor: pointer;
+    transition: color 0.2s;
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: #4f46e5;
+  }
+  
+  .topic-banner-badge:hover {
+    color: #3b82f6;
+    text-decoration: underline;
+  }
+  
+  /* Improved styling for topic badge prefix */
+  .topic-badge-prefix {
+    color: #6b7280;
+    margin-right: 2px;
+  }
+
+  /* Consolidated Topic Dropdown Styles - add to note-topicchange.css */
+
+/* "Add a badge" link styling */
+.add-badge-link {
+    background: none;
+    border: none;
+    font-size: 0.85rem;
+    color: #6b7280;
+    cursor: pointer;
+    padding: 0;
+    margin-left: 8px;
+    text-decoration: underline;
+    transition: color 0.2s;
+  }
+  
+  .add-badge-link:hover {
+    color: #4f46e5;
+  }
+  
+  /* Topic dropdown portal */
+  .topic-dropdown-portal {
+    position: fixed;
+    z-index: 1000;
+  }
+  
+  /* Topic dropdown styling */
+  .topic-change-dropdown {
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    min-width: 160px;
+    overflow: hidden;
+  }
+  
+  /* Dropdown items */
+  .dropdown-header {
+    padding: 8px 12px;
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: #6b7280;
+    border-bottom: 1px solid #f3f4f6;
+    background-color: #f9fafb;
+  }
+  
+  .dropdown-item {
+    padding: 8px 12px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+    font-size: 0.9rem;
+    display: flex;
+    align-items: center;
+  }
+  
+  .dropdown-item:hover {
+    background-color: #f3f4f6;
+  }
+  
+  .dropdown-item.active-topic {
+    color: #4f46e5;
+    background-color: rgba(79, 70, 229, 0.1);
+    font-weight: 500;
+  }
+  
+  .dropdown-item.active-topic::after {
+    content: "✓";
+    margin-left: auto;
+    color: #4f46e5;
+  }
+  
+  /* Author info container */
+  .author-info {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    position: relative; /* For dropdown positioning */
+  }

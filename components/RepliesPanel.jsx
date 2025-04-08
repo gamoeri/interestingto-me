@@ -10,29 +10,25 @@ export default function RepliesPanel({
   displayName,
   profilePic
 }) {
-  // Ensure we have the current user's profile info for displaying in replies
-  const currentUserInfo = {
-    profilePic,
-    displayName
-  };
-  
   const [replyContent, setReplyContent] = useState('')
   
   // Find the active note
   const activeNote = activeNoteId ? notes.find(note => note.id === activeNoteId) : null
   
-  const handleSubmitReply = () => {
-    if (replyContent.trim() && replyContent.length <= 280 && activeNoteId) {
-      // Pass the current user's profile info with the reply
-      onAddReply(activeNoteId, replyContent, currentUserInfo)
-      setReplyContent('')
+  const handleReplySubmit = () => {
+    if (replyContent.trim() && activeNoteId && onAddReply) {
+      onAddReply(activeNoteId, replyContent.trim(), {
+        displayName,
+        profilePic
+      });
+      setReplyContent('');
     }
-  }
+  };
   
   if (!activeNote) {
     return (
       <div className="empty-replies-panel">
-        <p>Select a note to view and add replies</p>
+        <p>Select a note to view related content</p>
       </div>
     )
   }
@@ -40,13 +36,14 @@ export default function RepliesPanel({
   return (
     <div className="replies-panel">
       <div className="replies-header">
-        <h3 className="replies-title">Replies</h3>
-        <button onClick={onClose} className="close-replies">×</button>
+        <h3 className="replies-title">Conversation</h3>
+        <button onClick={onClose} className="close-button">×</button>
       </div>
       
-      <div className="original-note">
-        <div className="original-note-container">
-          <div className="note-avatar">
+      {/* Original Note */}
+      <div className="original-note-container">
+        <div className="note-main-content">
+          <div className="entry-avatar">
             {activeNote.profilePic ? (
               <img 
                 src={activeNote.profilePic} 
@@ -59,35 +56,44 @@ export default function RepliesPanel({
               </div>
             )}
           </div>
-          <div className="note-content-wrapper">
-            <div className="note-header">
-              <span className="note-author">{activeNote.author}</span>
-              <span className="note-date">{new Date(activeNote.timestamp).toLocaleDateString()}</span>
+          <div className="entry-details">
+            <div className="entry-header">
+              <span className="entry-author">{activeNote.author}</span>
+              <span className="entry-time">
+                {new Date(activeNote.timestamp).toLocaleString(undefined, {
+                  month: 'short',
+                  day: 'numeric',
+                  hour: '2-digit',
+                  minute: '2-digit'
+                })}
+              </span>
             </div>
-            <p className="note-content">{activeNote.content}</p>
+            <p className="entry-text">{activeNote.content}</p>
           </div>
         </div>
       </div>
       
+      {/* Reply Input */}
       <div className="reply-form-container">
         <textarea
-          placeholder="Write a reply..."
-          className="textarea reply-textarea"
           value={replyContent}
           onChange={(e) => setReplyContent(e.target.value)}
+          placeholder="Write a reply..."
+          className="reply-textarea"
         />
         <div className="reply-form-actions">
           <span className="char-count">{replyContent.length}/280</span>
           <button 
-            onClick={handleSubmitReply} 
-            disabled={replyContent.length === 0 || replyContent.length > 280}
-            className="primary-button"
+            onClick={handleReplySubmit}
+            disabled={replyContent.length > 280 || replyContent.length === 0}
+            className="post-button"
           >
             Reply
           </button>
         </div>
       </div>
       
+      {/* Replies List */}
       <div className="replies-list-container">
         <h4 className="replies-subheader">
           {activeNote.replies && activeNote.replies.length > 0 
@@ -95,51 +101,45 @@ export default function RepliesPanel({
             : 'No replies yet'}
         </h4>
         
-        <div className="replies-list">
-          {activeNote.replies && activeNote.replies.length > 0 ? (
-            activeNote.replies
+        {activeNote.replies && activeNote.replies.length > 0 ? (
+          <div className="replies-items">
+            {activeNote.replies
               .sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp))
-              .map((reply, index) => {
-                // Determine if this reply is from the current user
-                const isCurrentUser = reply.author === displayName;
-                
-                return (
-                  <div key={index} className="reply-item">
-                    <div className="reply-avatar">
-                      {isCurrentUser && profilePic ? (
-                        // Use current profile pic for current user's replies
-                        <img 
-                          src={profilePic} 
-                          alt={`${reply.author}'s avatar`}
-                          className="avatar-image"
-                        />
-                      ) : reply.profilePic ? (
-                        // Use stored profile pic for other users' replies
-                        <img 
-                          src={reply.profilePic} 
-                          alt={`${reply.author}'s avatar`}
-                          className="avatar-image"
-                        />
-                      ) : (
-                        <div className="avatar-placeholder">
-                          {reply.author ? reply.author.charAt(0).toUpperCase() : '?'}
-                        </div>
-                      )}
-                    </div>
-                    <div className="reply-content-wrapper">
-                      <div className="reply-header">
-                        <span className="reply-author">{reply.author}</span>
-                        <span className="reply-date">{new Date(reply.timestamp).toLocaleDateString()}</span>
+              .map((reply, index) => (
+                <div key={index} className="reply-item">
+                  <div className="reply-avatar">
+                    {reply.profilePic ? (
+                      <img 
+                        src={reply.profilePic} 
+                        alt={`${reply.author}'s avatar`}
+                        className="avatar-image"
+                      />
+                    ) : (
+                      <div className="avatar-placeholder">
+                        {reply.author ? reply.author.charAt(0).toUpperCase() : '?'}
                       </div>
-                      <p className="reply-content">{reply.content}</p>
-                    </div>
+                    )}
                   </div>
-                );
-              })
-          ) : (
-            <p className="empty-replies">No replies yet. Be the first to reply!</p>
-          )}
-        </div>
+                  <div className="reply-content">
+                    <div className="reply-header">
+                      <span className="reply-author">{reply.author}</span>
+                      <span className="reply-time">
+                        {new Date(reply.timestamp).toLocaleString(undefined, {
+                          month: 'short',
+                          day: 'numeric',
+                          hour: '2-digit',
+                          minute: '2-digit'
+                        })}
+                      </span>
+                    </div>
+                    <p className="reply-text">{reply.content}</p>
+                  </div>
+                </div>
+              ))}
+          </div>
+        ) : (
+          <p className="empty-replies">No replies yet. Be the first to reply!</p>
+        )}
       </div>
     </div>
   )

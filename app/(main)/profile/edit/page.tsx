@@ -1,131 +1,170 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
-import { auth, db } from '@/lib/firebase'
-import { doc, getDoc, updateDoc } from 'firebase/firestore'
-import { useRouter } from 'next/navigation'
-import ProfileEdit from '@/components/ProfileEdit'
+import { useState } from 'react'
 
-export default function ProfileEditPage() {
-  const router = useRouter()
-  const [user, setUser] = useState(null)
-  const [userProfile, setUserProfile] = useState(null)
-  const [loading, setLoading] = useState(true)
-
-  useEffect(() => {
-    const fetchUserProfile = async () => {
-      const authUser = auth.currentUser
-      if (!authUser) {
-        router.push('/signin')
-        return
-      }
-
-      setUser(authUser)
-      
-      try {
-        // Get user profile
-        const userDocRef = doc(db, 'users', authUser.uid)
-        const userDoc = await getDoc(userDocRef)
-        
-        if (userDoc.exists()) {
-          setUserProfile(userDoc.data())
-        } else {
-          router.push('/signin')
-          return
-        }
-      } catch (error) {
-        console.error('Error fetching user profile:', error)
-      }
-      
-      setLoading(false)
+export default function ProfileEdit({
+  userProfile,
+  onUpdateDisplayName,
+  onUpdateBio,
+  onUpdateProfilePic,
+  onUpdateBannerImage,
+  onUpdateBackgroundColor,
+  onClose
+}) {
+  const [displayName, setDisplayName] = useState(userProfile?.displayName || '')
+  const [bio, setBio] = useState(userProfile?.bio || '')
+  const [profilePic, setProfilePic] = useState(userProfile?.profilePic || '')
+  const [bannerImage, setBannerImage] = useState(userProfile?.bannerImage || '')
+  const [backgroundColor, setBackgroundColor] = useState(userProfile?.backgroundColor || '#f8f8f8')
+  
+  const handleSaveAll = (e) => {
+    e.preventDefault()
+    
+    // Only update fields that have changed
+    if (displayName.trim() && displayName !== userProfile?.displayName) {
+      onUpdateDisplayName(displayName)
     }
     
-    fetchUserProfile()
-  }, [router])
-
-  const updateDisplayName = useCallback(async (newName) => {
-    if (!user || !newName.trim()) return
-    
-    try {
-      const userDocRef = doc(db, 'users', user.uid)
-      await updateDoc(userDocRef, { displayName: newName })
-      setUserProfile(prev => ({...prev, displayName: newName}))
-    } catch (error) {
-      console.error('Error updating name:', error)
-      alert('Failed to update name. Please try again.')
+    if (bio !== userProfile?.bio) {
+      onUpdateBio(bio)
     }
-  }, [user])
-
-  const updateBio = useCallback(async (newBio) => {
-    if (!user) return
     
-    try {
-      const userDocRef = doc(db, 'users', user.uid)
-      await updateDoc(userDocRef, { bio: newBio })
-      setUserProfile(prev => ({...prev, bio: newBio}))
-    } catch (error) {
-      console.error('Error updating bio:', error)
-      alert('Failed to update bio. Please try again.')
+    if (profilePic.trim() && profilePic !== userProfile?.profilePic) {
+      onUpdateProfilePic(profilePic)
     }
-  }, [user])
-
-  const updateProfilePic = useCallback(async (newPic) => {
-    if (!user || !newPic.trim()) return
     
-    try {
-      const userDocRef = doc(db, 'users', user.uid)
-      await updateDoc(userDocRef, { profilePic: newPic })
-      setUserProfile(prev => ({...prev, profilePic: newPic}))
-    } catch (error) {
-      console.error('Error updating profile picture:', error)
-      alert('Failed to update profile picture. Please try again.')
+    if (bannerImage.trim() && bannerImage !== userProfile?.bannerImage) {
+      onUpdateBannerImage(bannerImage)
     }
-  }, [user])
-
-  const updateBannerImage = useCallback(async (newBanner) => {
-    if (!user || !newBanner.trim()) return
     
-    try {
-      const userDocRef = doc(db, 'users', user.uid)
-      await updateDoc(userDocRef, { bannerImage: newBanner })
-      setUserProfile(prev => ({...prev, bannerImage: newBanner}))
-    } catch (error) {
-      console.error('Error updating banner image:', error)
-      alert('Failed to update banner image. Please try again.')
+    if (backgroundColor !== userProfile?.backgroundColor) {
+      onUpdateBackgroundColor(backgroundColor)
     }
-  }, [user])
-
-  const updateBackgroundColor = useCallback(async (newColor) => {
-    if (!user || !newColor.trim()) return
     
-    try {
-      const userDocRef = doc(db, 'users', user.uid)
-      await updateDoc(userDocRef, { backgroundColor: newColor })
-      setUserProfile(prev => ({...prev, backgroundColor: newColor}))
-    } catch (error) {
-      console.error('Error updating background color:', error)
-      alert('Failed to update background color. Please try again.')
-    }
-  }, [user])
-
-  if (loading) {
-    return (
-      <div className="loading-container">
-        <div className="loading-spinner"></div>
-        <p>Loading your profile...</p>
-      </div>
-    )
+    onClose()
   }
-
+  
   return (
-    <ProfileEdit 
-      userProfile={userProfile}
-      onUpdateDisplayName={updateDisplayName}
-      onUpdateBio={updateBio}
-      onUpdateProfilePic={updateProfilePic}
-      onUpdateBannerImage={updateBannerImage}
-      onUpdateBackgroundColor={updateBackgroundColor}
-      onClose={() => router.push('/profile')}
-    />
+    <div className="profile-edit-section">
+      <div className="profile-edit-header">
+        <h2>Edit Profile</h2>
+        <button 
+          onClick={onClose} 
+          className="close-button"
+          aria-label="Close"
+        >
+          ×
+        </button>
+      </div>
+      
+      <form onSubmit={handleSaveAll} className="profile-edit-form">
+        {/* Profile Picture */}
+        <div className="edit-section">
+          <label className="form-label">Profile Picture</label>
+          <div className="profile-pic-edit">
+            <div className="current-pic">
+              {profilePic ? (
+                <img 
+                  src={profilePic} 
+                  alt="Profile preview" 
+                />
+              ) : (
+                <div className="pic-placeholder">
+                  {displayName ? displayName.charAt(0).toUpperCase() : '?'}
+                </div>
+              )}
+            </div>
+            <div className="pic-input">
+              <input
+                type="url"
+                value={profilePic}
+                onChange={(e) => setProfilePic(e.target.value)}
+                placeholder="Enter image URL"
+                className="text-input"
+              />
+            </div>
+          </div>
+        </div>
+        
+        {/* Banner Image */}
+        <div className="edit-section">
+          <label className="form-label">Banner Image</label>
+          <div className="banner-pic-edit">
+            {bannerImage && (
+              <div 
+                className="banner-preview" 
+                style={{ backgroundImage: `url(${bannerImage})` }}
+              />
+            )}
+            <input
+              type="url"
+              value={bannerImage}
+              onChange={(e) => setBannerImage(e.target.value)}
+              placeholder="Enter banner image URL"
+              className="text-input"
+            />
+          </div>
+        </div>
+        
+        {/* Background Color */}
+        <div className="edit-section">
+          <label className="form-label">Background Color</label>
+          <div className="color-picker-container">
+            <input
+              type="color"
+              value={backgroundColor}
+              onChange={(e) => setBackgroundColor(e.target.value)}
+              className="color-picker"
+            />
+            <input
+              type="text"
+              value={backgroundColor}
+              onChange={(e) => setBackgroundColor(e.target.value)}
+              placeholder="#RRGGBB"
+              className="text-input color-text"
+            />
+          </div>
+        </div>
+        
+        {/* Display Name */}
+        <div className="edit-section">
+          <label className="form-label">Display Name</label>
+          <input
+            type="text"
+            value={displayName}
+            onChange={(e) => setDisplayName(e.target.value)}
+            placeholder="Your name"
+            className="text-input"
+            required
+          />
+        </div>
+        
+        {/* Bio */}
+        <div className="edit-section">
+          <label className="form-label">About Me</label>
+          <textarea
+            value={bio}
+            onChange={(e) => setBio(e.target.value)}
+            placeholder="Tell others about yourself..."
+            className="textarea"
+            rows={4}
+          />
+        </div>
+        
+        {/* Buttons */}
+        <div className="button-row">
+          <button type="submit" className="primary-button">
+            Save Changes
+          </button>
+          <button 
+            type="button" 
+            onClick={onClose} 
+            className="secondary-button"
+          >
+            Cancel
+          </button>
+        </div>
+      </form>
+    </div>
   )
 }
