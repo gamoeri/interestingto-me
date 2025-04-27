@@ -35,12 +35,17 @@
 .three-column-layout {
   display: grid;
   grid-template-columns: 250px minmax(400px, 0.94fr) 180px; /* Modified proportions */
-  gap: 16px;
+  gap: 4px;
   height: 100vh;
   max-width: 1200px;
-  margin: 0px auto 0;
+  margin: 0px auto;
   padding: 0 16px;
+  /*righthandscroll adjustment*/
+  overflow: hidden; /* Contain everything */
+  position: relative; /* For absolute positioning */
 }
+
+
 
 .two-column-layout {
   display: grid;
@@ -54,6 +59,9 @@
 
 /* Column styles */
 .left-column, .user-view-sidebar {
+  position: sticky;
+  top: 0;
+
   display: flex;
   flex-direction: column;
   gap: 24px;

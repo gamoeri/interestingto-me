@@ -1,33 +1,228 @@
+// @/components/Home.jsx
 'use client'
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
+import { useAuth } from '@/context/AuthContext'
+import { useTopics } from '@/context/TopicsContext'
+import { db } from '@/lib/firebase'
+import { collection, query, where, orderBy, limit, getDocs, getDoc, doc, updateDoc, arrayUnion, arrayRemove } from 'firebase/firestore'
 
-export default function HomePage({
-  user,
-  userProfile,
-  bookmarkedTopics,
-  topics,
-  userNotes,
-  onSelectNote,
-  onSelectTopic,
-  activeNoteId
-}) {
-  const [recentNotes, setRecentNotes] = useState([])
+export default function Home() {
+  const router = useRouter()
+  const { user, userProfile } = useAuth()
+  const { activeTopics, bookmarkedTopics } = useTopics()
   
-  // Get 3 most recent notes
+  const [topicUpdates, setTopicUpdates] = useState([])
+  const [loading, setLoading] = useState(true)
+  // Track expanded state for each update
+  const [expandedUpdates, setExpandedUpdates] = useState({})
+  // Track like loading state
+  const [likingInProgress, setLikingInProgress] = useState({})
+
+  // Fetch updates for bookmarked topics
   useEffect(() => {
-    if (userNotes && userNotes.length > 0) {
-      const sorted = [...userNotes].sort((a, b) => {
-        const dateA = new Date(a.timestamp)
-        const dateB = new Date(b.timestamp)
-        return dateB - dateA
-      })
-      
-      setRecentNotes(sorted.slice(0, 3))
+    const fetchTopicUpdates = async () => {
+      if (!user || !bookmarkedTopics || bookmarkedTopics.length === 0) {
+        setTopicUpdates([])
+        setLoading(false)
+        return
+      }
+
+      try {
+        setLoading(true)
+        
+        // Get the IDs of bookmarked topics
+        const bookmarkedTopicIds = bookmarkedTopics.map(topic => topic.id)
+        
+        // First try to fetch topic_updates collection
+        try {
+          const topicUpdatesQuery = query(
+            collection(db, 'topic_updates'),
+            where('topicId', 'in', bookmarkedTopicIds),
+            orderBy('timestamp', 'desc'),
+            limit(20)
+          )
+          
+          const updatesSnapshot = await getDocs(topicUpdatesQuery)
+          
+          // Process each update and add user data
+          if (!updatesSnapshot.empty) {
+            const updates = await Promise.all(updatesSnapshot.docs.map(async doc => {
+              const updateData = {
+                id: doc.id,
+                ...doc.data(),
+                likes: doc.data().likes || []
+              }
+              
+              // Fetch user profile for this update
+              if (updateData.userId) {
+                try {
+                  const userDoc = await getDoc(doc(db, 'users', updateData.userId))
+                  if (userDoc.exists()) {
+                    updateData.userProfile = userDoc.data()
+                  }
+                } catch (error) {
+                  console.error('Error fetching user for update:', error)
+                }
+              }
+              
+              // Fetch topic data
+              if (updateData.topicId) {
+                try {
+                  const topicDoc = await getDoc(doc(db, 'topics', updateData.topicId))
+                  if (topicDoc.exists()) {
+                    updateData.topicData = topicDoc.data()
+                  }
+                } catch (error) {
+                  console.error('Error fetching topic for update:', error)
+                }
+              }
+              
+              return updateData
+            }))
+            
+            setTopicUpdates(updates)
+            setLoading(false)
+            return
+          }
+        } catch (error) {
+          console.log('No topic_updates collection found or error:', error)
+          // Continue to fallback method
+        }
+        
+        // Fallback: get the most recent notes from bookmarked topics
+        const bookmarkedNotesQuery = query(
+          collection(db, 'notes'),
+          where('topicIds', 'array-contains-any', bookmarkedTopicIds),
+          orderBy('timestamp', 'desc'),
+          limit(20)
+        )
+        
+        const notesSnapshot = await getDocs(bookmarkedNotesQuery)
+        const notes = await Promise.all(notesSnapshot.docs.map(async noteDoc => {
+          const noteData = {
+            id: noteDoc.id,
+            ...noteDoc.data(),
+            type: 'note',
+            likes: noteDoc.data().likes || []
+          }
+          
+          // Fetch author info
+          if (noteData.authorId) {
+            try {
+              const userDoc = await getDoc(doc(db, 'users', noteData.authorId))
+              if (userDoc.exists()) {
+                noteData.userProfile = userDoc.data()
+              }
+            } catch (error) {
+              console.error('Error fetching note author:', error)
+            }
+          }
+          
+          // Get topic info
+          if (noteData.topicIds && noteData.topicIds.length > 0) {
+            try {
+              const topicDoc = await getDoc(doc(db, 'topics', noteData.topicIds[0]))
+              if (topicDoc.exists()) {
+                noteData.topicData = topicDoc.data()
+                noteData.topicId = noteData.topicIds[0]
+              }
+            } catch (error) {
+              console.error('Error fetching topic for note:', error)
+            }
+          }
+          
+          return noteData
+        }))
+        
+        setTopicUpdates(notes)
+      } catch (error) {
+        console.error('Error fetching topic updates:', error)
+        setTopicUpdates([])
+      } finally {
+        setLoading(false)
+      }
     }
-  }, [userNotes])
+    
+    if (bookmarkedTopics && bookmarkedTopics.length > 0) {
+      fetchTopicUpdates()
+    } else {
+      setLoading(false)
+    }
+  }, [user, bookmarkedTopics])
+
+  // Handle topic selection
+  const handleSelectTopic = (topicId) => {
+    router.push(`/topics/${topicId}`)
+  }
   
+  // Handle user profile click
+  const handleUserClick = (userId) => {
+    if (userId) {
+      router.push(`/users/${userId}`)
+    }
+  }
+
+  // Toggle expanded state for a specific update
+  const toggleExpand = (updateId, e) => {
+    e.stopPropagation() // Prevent clicking "See more" from navigating to topic
+    setExpandedUpdates(prev => ({
+      ...prev,
+      [updateId]: !prev[updateId]
+    }))
+  }
+  
+  // Handle liking an update
+  const handleLike = async (update, e) => {
+    e.stopPropagation() // Prevent navigating to topic
+    
+    if (!user || likingInProgress[update.id]) return
+    
+    setLikingInProgress(prev => ({ ...prev, [update.id]: true }))
+    
+    try {
+      const isLiked = update.likes?.includes(user.uid)
+      const collection = update.type === 'note' ? 'notes' : 'topic_updates'
+      const updateRef = doc(db, collection, update.id)
+      
+      if (isLiked) {
+        // Unlike
+        await updateDoc(updateRef, {
+          likes: arrayRemove(user.uid)
+        })
+        
+        // Update local state
+        setTopicUpdates(prev => 
+          prev.map(item => 
+            item.id === update.id 
+              ? { ...item, likes: item.likes.filter(id => id !== user.uid) } 
+              : item
+          )
+        )
+      } else {
+        // Like
+        await updateDoc(updateRef, {
+          likes: arrayUnion(user.uid)
+        })
+        
+        // Update local state
+        setTopicUpdates(prev => 
+          prev.map(item => 
+            item.id === update.id 
+              ? { ...item, likes: [...item.likes, user.uid] } 
+              : item
+          )
+        )
+      }
+    } catch (error) {
+      console.error('Error toggling like:', error)
+    } finally {
+      setLikingInProgress(prev => ({ ...prev, [update.id]: false }))
+    }
+  }
+
   // Format timestamp function
   const formatDate = (dateString) => {
     const date = new Date(dateString)
@@ -52,138 +247,181 @@ export default function HomePage({
       year: date.getFullYear() !== now.getFullYear() ? 'numeric' : undefined
     })
   }
-  
-  // Get topic name by id
-  const getTopicNames = (topicIds) => {
-    if (!topicIds || !Array.isArray(topicIds) || topicIds.length === 0) return 'No topics'
-    
-    const topicNames = topicIds.map(id => {
-      const topic = topics?.find(t => t.id === id)
-      return topic ? topic.name : 'Unknown'
-    })
-    
-    return topicNames.join(', ')
+
+  if (loading) {
+    return (
+      <div className="loading-container">
+        <div className="loading-spinner"></div>
+        <p>Loading your dashboard...</p>
+      </div>
+    )
   }
-  
+
   return (
     <div className="content-panel home-page-container">
-      <div className="page-header">
-        <h1 className="welcome-title">Welcome back, {userProfile?.displayName || 'User'}</h1>
+      {/* Sticky header with tab and bookmarks link */}
+      <div className="home-tabs-header">
+        <div className="tab-header">
+          <div className="tab-buttons">
+            <button className="tab-button active">
+              Updates
+            </button>
+          </div>
+          <Link href="/bookmarks" className="bookmarks-link">
+            Manage Bookmarks ({bookmarkedTopics.length})
+          </Link>
+        </div>
       </div>
       
-      <div className="home-dashboard">
-        {/* Stats summary */}
-        <div className="stats-summary">
-          <div className="stat-card">
-            <h3>{userNotes?.length || 0}</h3>
-            <p>Total Notes</p>
-          </div>
-          <div className="stat-card">
-            <h3>{topics?.length || 0}</h3>
-            <p>Topics</p>
-          </div>
-          <div className="stat-card">
-            <h3>{bookmarkedTopics?.length || 0}</h3>
-            <p>Bookmarks</p>
-          </div>
-        </div>
-        
-        {/* Two column layout for dashboard */}
-        <div className="dashboard-columns">
-          {/* Left column */}
-          <div className="dashboard-column">
-            {/* Recent notes */}
-            <div className="dashboard-section">
-              <div className="section-header">
-                <h2>Recent Notes</h2>
-                <Link href="/notes" className="view-all-link">View all</Link>
-              </div>
+      {/* Updates feed content */}
+      <div className="updates-feed-container">
+        {topicUpdates.length > 0 ? (
+          <div className="updates-list">
+            {topicUpdates.map(update => {
+              // Determine if content should be truncated
+              const contentText = update.type === 'note' 
+                ? update.content 
+                : update.sectionData?.content;
               
-              <div className="recent-notes-list">
-                {recentNotes.length > 0 ? (
-                  recentNotes.map(note => (
+              const isLongContent = contentText && contentText.length > 500;
+              const isExpanded = expandedUpdates[update.id] || false;
+              
+              // Format content with truncation or expansion
+              const displayContent = isLongContent && !isExpanded 
+                ? `${contentText.substring(0, 500)}...` 
+                : contentText || 'No content';
+                
+              // Check if user has liked this update
+              const isLiked = user && update.likes?.includes(user.uid);
+              
+              return (
+                <div key={update.id} className="update-item">
+                  <div className="update-header">
+                    {/* User profile picture */}
                     <div 
-                      key={note.id} 
-                      className="recent-note-card"
-                      onClick={() => onSelectNote(note.id)}
+                      className="user-avatar"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleUserClick(update.userProfile?.id);
+                      }}
                     >
-                      <div className="note-content-preview">
-                        {note.content.length > 100 
-                          ? `${note.content.substring(0, 100)}...` 
-                          : note.content
-                        }
+                      {update.userProfile?.profilePic ? (
+                        <img 
+                          src={update.userProfile.profilePic} 
+                          alt={update.userProfile.displayName || 'User'}
+                        />
+                      ) : (
+                        <div className="user-initial">
+                          {update.userProfile?.displayName ? update.userProfile.displayName.charAt(0).toUpperCase() : '?'}
+                        </div>
+                      )}
+                    </div>
+                    
+                    <div className="update-info">
+                      {/* Activity description with clickable elements */}
+                      <div className="activity-description">
+                        <span 
+                          className="username"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleUserClick(update.userProfile?.id);
+                          }}
+                        >
+                          {update.userProfile?.displayName || 'Unknown user'}
+                        </span>
+                        {update.type === 'note' && ' added a note in '}
+                        {update.actionType === 'section_added' && ' added a new section to '}
+                        {update.actionType === 'section_updated' && ' updated a section in '}
+                        {update.actionType === 'topic_created' && ' created a new topic '}
+                        <span 
+                          className="item-name"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleSelectTopic(update.topicId);
+                          }}
+                        >
+                          {update.topicData?.title || update.topicData?.name || 'a topic'}
+                        </span>
                       </div>
-                      <div className="note-meta">
-                        <span className="note-date">{formatDate(note.timestamp)}</span>
-                        <span className="note-topics">{getTopicNames(note.topicIds)}</span>
+                      
+                      {/* Timestamp */}
+                      <div className="update-time">
+                        {formatDate(update.timestamp)}
                       </div>
                     </div>
-                  ))
-                ) : (
-                  <div className="empty-state">
-                    <p>You haven't created any notes yet</p>
-                    <Link href="/notes" className="action-button">Create your first note</Link>
                   </div>
-                )}
-              </div>
-            </div>
-          </div>
-          
-          {/* Right column */}
-          <div className="dashboard-column">
-            {/* Bookmarked topics */}
-            <div className="dashboard-section">
-              <div className="section-header">
-                <h2>Bookmarked Topics</h2>
-                <Link href="/bookmarks" className="view-all-link">View all</Link>
-              </div>
-              
-              <div className="bookmarked-topics-list">
-                {bookmarkedTopics && bookmarkedTopics.length > 0 ? (
-                  bookmarkedTopics.slice(0, 5).map(topic => (
-                    <div 
-                      key={topic.id} 
-                      className="bookmark-topic-card"
-                      onClick={() => onSelectTopic(topic.id)}
+                  
+                  {/* Content preview */}
+                  <div className="update-content">
+                    {update.type === 'note' ? (
+                      <div>
+                        <div className="note-text">
+                          {displayContent}
+                        </div>
+                        {isLongContent && (
+                          <button 
+                            className="expand-button"
+                            onClick={(e) => toggleExpand(update.id, e)}
+                          >
+                            {isExpanded ? 'See less' : 'See more'}
+                          </button>
+                        )}
+                      </div>
+                    ) : update.sectionData && (
+                      <div>
+                        {update.sectionData.title && (
+                          <div className="content-title">{update.sectionData.title}</div>
+                        )}
+                        <div className="content-text">
+                          {displayContent}
+                        </div>
+                        {isLongContent && (
+                          <button 
+                            className="expand-button"
+                            onClick={(e) => toggleExpand(update.id, e)}
+                          >
+                            {isExpanded ? 'See less' : 'See more'}
+                          </button>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                  
+                  {/* Like button */}
+                  <div className="update-interactions">
+                    <button 
+                      className={`like-button ${isLiked ? 'liked' : ''}`}
+                      onClick={(e) => handleLike(update, e)}
+                      disabled={likingInProgress[update.id]}
                     >
-                      <h3>{topic.name}</h3>
-                      <p className="topic-author">by {topic.ownerName || 'Unknown'}</p>
-                    </div>
-                  ))
-                ) : (
-                  <div className="empty-state">
-                    <p>No bookmarked topics yet</p>
-                    <p className="empty-state-hint">
-                      Bookmark topics to quickly access them here
-                    </p>
+                      <svg 
+                        xmlns="http://www.w3.org/2000/svg" 
+                        width="16" 
+                        height="16" 
+                        viewBox="0 0 24 24" 
+                        fill={isLiked ? "currentColor" : "none"}
+                        stroke="currentColor" 
+                        strokeWidth="2" 
+                        strokeLinecap="round" 
+                        strokeLinejoin="round"
+                      >
+                        <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+                      </svg>
+                      <span className="like-count">{update.likes?.length || 0}</span>
+                    </button>
                   </div>
-                )}
-              </div>
-            </div>
-            
-            {/* Quick actions section */}
-            <div className="dashboard-section">
-              <div className="section-header">
-                <h2>Quick Actions</h2>
-              </div>
-              
-              <div className="quick-actions">
-                <Link href="/notes" className="quick-action-button">
-                  <span className="action-icon">✏️</span>
-                  <span>New Note</span>
-                </Link>
-                <button className="quick-action-button" onClick={() => setShowAddTopic(true)}>
-                  <span className="action-icon">📌</span>
-                  <span>New Topic</span>
-                </button>
-                <Link href="/profile" className="quick-action-button">
-                  <span className="action-icon">👤</span>
-                  <span>Edit Profile</span>
-                </Link>
-              </div>
-            </div>
+                </div>
+              );
+            })}
           </div>
-        </div>
+        ) : (
+          <div className="empty-state">
+            <p>No updates from your bookmarked topics</p>
+            <Link href="/bookmarks" className="action-button">
+              Find topics to bookmark
+            </Link>
+          </div>
+        )}
       </div>
     </div>
   )

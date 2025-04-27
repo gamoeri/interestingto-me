@@ -1,7 +1,15 @@
 'use client'
 
+import { Archivo } from 'next/font/google'
 import { useRouter, usePathname } from 'next/navigation'
 import { AuthProvider } from '@/context/AuthContext'
+
+// Initialize the Archivo font
+const archivo = Archivo({ 
+  subsets: ['latin'],
+  display: 'swap',
+  variable: '--font-archivo',
+})
 
 // Import your global styles
 import '@/styles/base.css'
@@ -16,6 +24,8 @@ import '@/styles/note-sendtotopic.css'
 import '@/styles/note-topicchange.css' 
 import '@/styles/home.css' 
 import '@/styles/profileedit.css' 
+//import '@/styles/notifications.css'
+import '@/styles/topic-sections.css';
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter()
@@ -26,8 +36,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   const isPublicRoute = publicRoutes.includes(pathname)
 
   return (
-    <html lang="en">
-      <body>
+    <html lang="en" className={archivo.variable}>
+      <body className="font-archivo">
           <AuthProvider>{children}</AuthProvider>
       </body>
     </html>

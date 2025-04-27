@@ -17,6 +17,7 @@ interface UserProfile {
   displayName: string;
   email: string;
   profilePic?: string;
+  backgroundColor?: string; // Added background color
   bookmarkedTopics: string[];
   archivedTopics: string[];
 }
@@ -25,11 +26,12 @@ interface AuthContextType {
   user: User | null;
   userProfile: UserProfile | null;
   loading: boolean;
-  isStable: boolean; // Add this flag
+  isStable: boolean;
   error: string | null;
   login: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
   signup: (email: string, password: string, displayName: string) => Promise<void>;
+  refreshUserProfile: () => Promise<void>; // Add this new function
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -38,8 +40,29 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
-  const [isStable, setIsStable] = useState(false); // Add isStable state
+  const [isStable, setIsStable] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // New function to refresh user profile
+  const refreshUserProfile = async () => {
+    console.log('🔄 Refreshing user profile');
+    if (!auth.currentUser) return;
+    
+    try {
+      const userDoc = await getDoc(doc(db, 'users', auth.currentUser.uid));
+      if (userDoc.exists()) {
+        const profile = {
+          id: auth.currentUser.uid,
+          ...userDoc.data()
+        } as UserProfile;
+        
+        setUserProfile(profile);
+        console.log('✅ User profile refreshed', profile);
+      }
+    } catch (err) {
+      console.error('❌ Profile refresh error:', err);
+    }
+  };
 
   useEffect(() => {
     console.log('🔐 Setting up auth state listener');
@@ -65,6 +88,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               displayName: firebaseUser.displayName || firebaseUser.email?.split('@')[0] || 'User',
               email: firebaseUser.email || '',
               profilePic: firebaseUser.photoURL || undefined,
+              backgroundColor: '#f8f8f8', // Default background color
               bookmarkedTopics: [],
               archivedTopics: []
             };
@@ -84,7 +108,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setError(err instanceof Error ? err.message : 'Auth error');
       } finally {
         setLoading(false);
-        setIsStable(true); // Mark auth as stable once initial loading is complete
+        setIsStable(true);
         console.log('🔒 Auth state stabilized');
       }
     });
@@ -117,7 +141,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setError(null);
     try {
       await signOut(auth);
-      // Explicitly clear local state
       setUser(null);
       setUserProfile(null);
       console.log('✅ Logout successful');
@@ -142,6 +165,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         displayName,
         email,
         profilePic: null,
+        backgroundColor: '#f8f8f8', // Default background color
         bookmarkedTopics: [],
         archivedTopics: []
       };
@@ -161,11 +185,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       user,
       userProfile,
       loading,
-      isStable, // Include the isStable flag in context
+      isStable,
       error,
       login,
       logout,
-      signup
+      signup,
+      refreshUserProfile // Add the new function to context
     }}>
       {children}
     </AuthContext.Provider>

@@ -20,6 +20,8 @@ export interface Note {
   id: string;
   content: string;
   authorId: string;
+  author?: string;
+  profilePic?: string;
   topicIds?: string[];
   timestamp: string;
   likes?: string[];
@@ -73,18 +75,20 @@ export function useNotes() {
   }, [user?.uid])
 
   // Define the functions within the hook
-  const addNote = async (content: string, topicIds: string[] = []) => {
+  const addNote = async (content: string, topicIds: string[] = [], authorInfo?: { displayName?: string, profilePic?: string }) => {
     if (!user) {
       console.warn('[useNotes] Cannot add note - no user')
       return
     }
 
     try {
-      console.log('[useNotes] Adding note', { content, topicIds })
+      console.log('[useNotes] Adding note', { content, topicIds, authorInfo })
       await addDoc(collection(db, 'notes'), {
         content,
         topicIds,
         authorId: user.uid,
+        author: authorInfo?.displayName || 'User', // Add displayName
+        profilePic: authorInfo?.profilePic || null, // Add profile pic
         timestamp: new Date().toISOString(),
         likes: [],
         replies: []
@@ -116,17 +120,19 @@ export function useNotes() {
     )
   }
 
-  const addReply = async (noteId: string, content: string) => {
+  const addReply = async (noteId: string, content: string, authorInfo?: { displayName?: string, profilePic?: string }) => {
     if (!user) {
       console.warn('[useNotes] Cannot add reply - no user')
       return
     }
 
     try {
-      console.log('[useNotes] Adding reply to note', { noteId, content })
+      console.log('[useNotes] Adding reply to note', { noteId, content, authorInfo })
       const reply = {
         content,
         userId: user.uid,
+        author: authorInfo?.displayName || 'User',
+        profilePic: authorInfo?.profilePic || null,
         timestamp: new Date().toISOString()
       }
 

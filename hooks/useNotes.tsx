@@ -73,18 +73,22 @@ export function useNotes() {
   }, [user?.uid])
 
   // Define the functions within the hook
-  const addNote = async (content: string, topicIds: string[] = []) => {
+  const addNote = async (content: string, topicIds: string[] = [], authorInfo?: { displayName?: string, profilePic?: string }) => {
     if (!user) {
       console.warn('[useNotes] Cannot add note - no user')
       return
     }
-
+  
     try {
-      console.log('[useNotes] Adding note', { content, topicIds })
+      // Fix the log statement to include authorInfo
+      console.log('[useNotes] Adding note with all params:', { content, topicIds, authorInfo })
+      
       await addDoc(collection(db, 'notes'), {
         content,
         topicIds,
         authorId: user.uid,
+        author: authorInfo?.displayName || 'User', // Make sure this is included
+        profilePic: authorInfo?.profilePic || null, // Make sure this is included
         timestamp: new Date().toISOString(),
         likes: [],
         replies: []

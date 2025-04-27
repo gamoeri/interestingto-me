@@ -1,229 +1,204 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { 
   doc, 
   getDoc, 
   collection, 
-  addDoc, 
   getDocs, 
   query, 
   where,
   updateDoc,
   deleteDoc,
+  orderBy,
   arrayUnion,
   arrayRemove,
-  setDoc
+  setDoc,
+  serverTimestamp
 } from 'firebase/firestore'
 import { db, auth } from '@/lib/firebase'
 import { useRouter } from 'next/navigation'
 
-export default function TopicContent({ topicId, userId, onTopicDeleted, onBookmarkToggle }) {
+// Import our section components
+import Section from './Section'
+import AddSection from './AddSection'
+
+export default function TopicContent({ topicId, userId, onTopicDeleted }) {
   const router = useRouter()
   const [topic, setTopic] = useState(null)
-  const [content, setContent] = useState('')
-  const [isEditing, setIsEditing] = useState(false)
-  const [isSettingsOpen, setIsSettingsOpen] = useState(false)
-  const [newTopicName, setNewTopicName] = useState('')
-  const [comments, setComments] = useState([])
-  const [newComment, setNewComment] = useState('')
+  const [sections, setSections] = useState([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState(null)
   const [isBookmarked, setIsBookmarked] = useState(false)
   const [topicOwner, setTopicOwner] = useState(null)
   const [bookmarkCount, setBookmarkCount] = useState(0)
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false)
   const [isArchived, setIsArchived] = useState(false)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
-  const [activeTab, setActiveTab] = useState('notes') // State for active tab
-  const [sentNotes, setSentNotes] = useState([])
-  const [showSendNoteModal, setShowSendNoteModal] = useState(false)
-  const [userNotes, setUserNotes] = useState([])
-  const [selectedNotesToSend, setSelectedNotesToSend] = useState([])
+  const [topicName, setTopicName] = useState('')
+  const [viewStyle, setViewStyle] = useState('timeline') // 'timeline' or 'compact'
+  const [sortOrder, setSortOrder] = useState('newest') // 'newest' or 'oldest'
   
   // Check if current user is the owner of this topic
   const isOwner = userId === topic?.userId
-
-  useEffect(() => {
-    const fetchTopic = async () => {
-      try {
-        setIsLoading(true)
-        setError(null)
-        
-        const topicDoc = await getDoc(doc(db, 'topics', topicId))
-        if (topicDoc.exists()) {
-          const topicData = topicDoc.data()
-          setTopic(topicData)
-          setContent(topicData.content || '')
-          setNewTopicName(topicData.name || '')
-          setIsArchived(topicData.archived || false)
-          
-          // Fetch topic owner info
-          if (topicData.userId) {
-            const ownerDoc = await getDoc(doc(db, 'users', topicData.userId))
-            if (ownerDoc.exists()) {
-              const userData = ownerDoc.data()
-              setTopicOwner(userData)
-            }
-          }
-
-          // Check if current user has bookmarked this topic
-          const currentUser = auth.currentUser
-          if (currentUser) {
-            const userDoc = await getDoc(doc(db, 'users', currentUser.uid))
-            if (userDoc.exists()) {
-              const userData = userDoc.data()
-              setIsBookmarked(userData.bookmarkedTopics?.includes(topicId) || false)
-            }
-          }
-          
-          // Count how many users have bookmarked this topic
-          const usersSnapshot = await getDocs(collection(db, 'users'))
-          let count = 0
-          usersSnapshot.forEach(doc => {
-            const userData = doc.data()
-            if (userData.bookmarkedTopics && userData.bookmarkedTopics.includes(topicId)) {
-              count++
-            }
-          })
-          setBookmarkCount(count)
-          
-          // Fetch comments
-          const commentsSnapshot = await getDocs(
-            query(collection(db, 'comments'), where('topicId', '==', topicId))
-          )
-          
-          const commentsData = await Promise.all(
-            commentsSnapshot.docs.map(async (commentDoc) => {
-              const comment = { id: commentDoc.id, ...commentDoc.data() }
-              
-              // Fetch comment author info
-              if (comment.userId) {
-                const authorDoc = await getDoc(doc(db, 'users', comment.userId))
-                if (authorDoc.exists()) {
-                  const authorData = authorDoc.data()
-                  comment.author = authorData.displayName || 'Unknown'
-                  comment.profilePic = authorData.profilePic || null
-                  comment.authorId = comment.userId // Store the author ID for linking
-                }
-              }
-              
-              return comment
-            })
-          )
-          
-          setComments(commentsData)
-          
-          // Fetch sent notes for this topic
-          await fetchSentNotes(topicId)
-        } else {
-          setError('Topic not found')
-        }
-      } catch (error) {
-        console.error('Error fetching topic data:', error)
-        setError('Failed to load topic data')
-      } finally {
-        setIsLoading(false)
-      }
-    }
-    
-    fetchTopic()
-    
-    // Fetch user's notes for the send note modal
-    if (userId) {
-      fetchUserNotes(userId)
-    }
-  }, [topicId, userId])
-
-  // Fetch notes that have been sent to this topic
-  const fetchSentNotes = async (topicId) => {
+  
+  // Format date helper
+  const formatDate = (dateString) => {
+    if (!dateString) return 'Unknown'
+    const date = new Date(dateString)
+    return date.toLocaleDateString('en-US', { 
+      year: 'numeric', 
+      month: 'short', 
+      day: 'numeric'
+    })
+  }
+  
+  // Fetch topic data
+  const fetchTopicData = useCallback(async () => {
     try {
-      // First check if the sentNotes collection exists for this topic
-      const sentNotesRef = collection(db, 'topics', topicId, 'sentNotes')
-      const sentNotesSnapshot = await getDocs(sentNotesRef)
+      setIsLoading(true)
+      setError(null)
       
-      const sentNotesData = await Promise.all(
-        sentNotesSnapshot.docs.map(async (noteDoc) => {
-          const note = { id: noteDoc.id, ...noteDoc.data() }
-          
-          // Fetch note author info if not included
-          if (note.authorId && (!note.author || !note.profilePic)) {
-            try {
-              const authorDoc = await getDoc(doc(db, 'users', note.authorId))
-              if (authorDoc.exists()) {
-                const authorData = authorDoc.data()
-                note.author = authorData.displayName || 'Unknown'
-                note.profilePic = authorData.profilePic || null
-              }
-            } catch (e) {
-              console.error('Error fetching author info:', e)
-            }
+      const topicDoc = await getDoc(doc(db, 'topics', topicId))
+      if (topicDoc.exists()) {
+        const topicData = topicDoc.data()
+        setTopic(topicData)
+        setTopicName(topicData.name || '')
+        setIsArchived(topicData.archived || false)
+        
+        // Fetch topic owner info
+        if (topicData.userId) {
+          const ownerDoc = await getDoc(doc(db, 'users', topicData.userId))
+          if (ownerDoc.exists()) {
+            const userData = ownerDoc.data()
+            setTopicOwner(userData)
           }
-          
-          return note
+        }
+
+        // Check if current user has bookmarked this topic
+        const currentUser = auth.currentUser
+        if (currentUser) {
+          const userDoc = await getDoc(doc(db, 'users', currentUser.uid))
+          if (userDoc.exists()) {
+            const userData = userDoc.data()
+            setIsBookmarked(userData.bookmarkedTopics?.includes(topicId) || false)
+          }
+        }
+        
+        // Count how many users have bookmarked this topic
+        const usersSnapshot = await getDocs(collection(db, 'users'))
+        let count = 0
+        usersSnapshot.forEach(doc => {
+          const userData = doc.data()
+          if (userData.bookmarkedTopics && userData.bookmarkedTopics.includes(topicId)) {
+            count++
+          }
         })
+        setBookmarkCount(count)
+        
+        // Fetch sections
+        await fetchSections()
+      } else {
+        setError('Topic not found')
+      }
+    } catch (error) {
+      console.error('Error fetching topic data:', error)
+      setError('Failed to load topic data')
+    } finally {
+      setIsLoading(false)
+    }
+  }, [topicId])
+  
+  // Fetch sections
+  const fetchSections = useCallback(async () => {
+    try {
+      // Query sections collection for this topic
+      const sectionsQuery = query(
+        collection(db, 'topics', topicId, 'sections'),
+        where('deleted', '==', false),
+        orderBy('createdAt', sortOrder === 'newest' ? 'desc' : 'asc')
       )
       
-      setSentNotes(sentNotesData)
+      const sectionsSnapshot = await getDocs(sectionsQuery)
+      
+      // Process sections
+      const sectionsData = []
+      
+      for (const sectionDoc of sectionsSnapshot.docs) {
+        const sectionData = sectionDoc.data()
+        
+        // Add section with its ID
+        sectionsData.push({
+          id: sectionDoc.id,
+          ...sectionData,
+          // Convert timestamps to strings for easier handling
+          createdAt: sectionData.createdAt?.toDate?.()?.toISOString() || new Date().toISOString(),
+          updatedAt: sectionData.updatedAt?.toDate?.()?.toISOString() || new Date().toISOString()
+        })
+      }
+      
+      setSections(sectionsData)
     } catch (error) {
-      console.error('Error fetching sent notes:', error)
+      console.error('Error fetching sections:', error)
     }
-  }
+  }, [topicId, sortOrder])
   
-  // Fetch user's notes for sending to topic
-  const fetchUserNotes = async (userId) => {
+  // Toggle bookmark
+  const toggleBookmark = async () => {
     try {
-      const notesQuery = query(collection(db, 'notes'), where('authorId', '==', userId))
-      const notesSnapshot = await getDocs(notesQuery)
+      const currentUser = auth.currentUser
+      if (!currentUser) return
       
-      const notesData = notesSnapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data(),
-        isSelected: false // Add selection state for the modal
-      }))
+      const userDocRef = doc(db, 'users', currentUser.uid)
       
-      setUserNotes(notesData)
-    } catch (error) {
-      console.error('Error fetching user notes:', error)
-    }
-  }
-
-  // Navigate to a user's profile
-  const navigateToUserProfile = (username) => {
-    if (!username) return
-    router.push(`/${username}`)
-  }
-  
-  const handleSaveContent = async () => {
-    if (!isOwner) return
-    
-    try {
-      await updateDoc(doc(db, 'topics', topicId), {
-        content,
-        updatedAt: new Date().toISOString()
-      })
-      
-      setIsEditing(false)
+      if (isBookmarked) {
+        // Remove bookmark
+        await updateDoc(userDocRef, {
+          bookmarkedTopics: arrayRemove(topicId)
+        })
+        setBookmarkCount(prev => prev - 1)
+      } else {
+        // Add bookmark
+        await updateDoc(userDocRef, {
+          bookmarkedTopics: arrayUnion(topicId)
+        })
+        setBookmarkCount(prev => prev + 1)
+      }
       
       // Update local state
-      setTopic(prev => ({
-        ...prev,
-        content,
-        updatedAt: new Date().toISOString()
-      }))
+      setIsBookmarked(!isBookmarked)
     } catch (error) {
-      console.error('Error saving content:', error)
-      alert('Failed to save content. Please try again.')
+      console.error('Error toggling bookmark:', error)
+      alert('Failed to update bookmark. Please try again.')
     }
   }
   
+  // Add section handler
+  const handleAddSection = (newSection) => {
+    setSections(prev => [newSection, ...prev])
+  }
+  
+  // Delete section handler
+  const handleDeleteSection = (sectionId) => {
+    setSections(prev => prev.filter(section => section.id !== sectionId))
+  }
+  
+  // Handle save settings
   const handleSaveSettings = async () => {
     if (!isOwner) return
     
     try {
+      // Validate
+      if (!topicName.trim()) {
+        alert('Topic name cannot be empty')
+        return
+      }
+      
+      // Update topic name and archived status directly on the topic document
       await updateDoc(doc(db, 'topics', topicId), {
-        name: newTopicName,
+        name: topicName.trim(),
         archived: isArchived,
-        updatedAt: new Date().toISOString()
+        updatedAt: serverTimestamp()
       })
       
       setIsSettingsOpen(false)
@@ -231,171 +206,47 @@ export default function TopicContent({ topicId, userId, onTopicDeleted, onBookma
       // Update local state
       setTopic(prev => ({
         ...prev,
-        name: newTopicName,
+        name: topicName.trim(),
         archived: isArchived,
         updatedAt: new Date().toISOString()
       }))
+      
+      console.log(`Topic ${topicId} name updated to: ${topicName} and archived status updated to: ${isArchived}`)
     } catch (error) {
       console.error('Error saving settings:', error)
       alert('Failed to save settings. Please try again.')
     }
   }
   
+  // Handle delete topic
   const handleDeleteTopic = async () => {
     if (!isOwner) return
     
-    // Call the parent component's delete function
-    if (typeof onTopicDeleted === 'function') {
-      onTopicDeleted(topicId)
-    } else {
-      console.error('No delete callback provided')
-      alert('Could not delete topic. Please try again.')
-    }
-  }
-  
-  const handleAddComment = async (e) => {
-    e.preventDefault()
-    if (!newComment.trim()) return
-    
     try {
-      const currentUser = auth.currentUser
-      if (!currentUser) return
-      
-      const commentData = {
-        content: newComment.trim(),
-        topicId,
-        userId: currentUser.uid,
-        createdAt: new Date().toISOString()
-      }
-      
-      const docRef = await addDoc(collection(db, 'comments'), commentData)
-      
-      // Fetch author info to display immediately
-      const userDoc = await getDoc(doc(db, 'users', currentUser.uid))
-      const userData = userDoc.exists() ? userDoc.data() : {}
-      
-      const newCommentWithAuthor = {
-        id: docRef.id,
-        ...commentData,
-        author: userData.displayName || currentUser.email.split('@')[0],
-        profilePic: userData.profilePic || null,
-        authorId: currentUser.uid
-      }
-      
-      setComments(prev => [...prev, newCommentWithAuthor])
-      setNewComment('')
-    } catch (error) {
-      console.error('Error adding comment:', error)
-      alert('Failed to add comment. Please try again.')
-    }
-  }
-  
-  const toggleBookmark = async () => {
-    try {
-      const currentUser = auth.currentUser;
-      if (!currentUser) return;
-      
-      const userDocRef = doc(db, 'users', currentUser.uid);
-      
-      if (isBookmarked) {
-        // Remove bookmark
-        await updateDoc(userDocRef, {
-          bookmarkedTopics: arrayRemove(topicId)
-        });
-        setBookmarkCount(prev => prev - 1);
+      // Call the parent component's delete function
+      if (typeof onTopicDeleted === 'function') {
+        onTopicDeleted(topicId)
       } else {
-        // Add bookmark
-        await updateDoc(userDocRef, {
-          bookmarkedTopics: arrayUnion(topicId)
-        });
-        setBookmarkCount(prev => prev + 1);
-      }
-      
-      // Update local state
-      setIsBookmarked(!isBookmarked);
-      
-      // Force a refresh of the bookmarked topics in the parent component
-      if (typeof onBookmarkToggle === 'function') {
-        onBookmarkToggle(topicId, !isBookmarked);
+        console.error('No delete callback provided')
+        alert('Could not delete topic. Please try again.')
       }
     } catch (error) {
-      console.error('Error toggling bookmark:', error);
-      alert('Failed to update bookmark. Please try again.');
-    }
-  };
-  
-  // Toggle note selection in the send note modal
-  const toggleNoteSelection = (noteId) => {
-    setUserNotes(prevNotes => 
-      prevNotes.map(note => 
-        note.id === noteId 
-          ? { ...note, isSelected: !note.isSelected } 
-          : note
-      )
-    )
-    
-    // Also update selectedNotesToSend
-    const isCurrentlySelected = userNotes.find(note => note.id === noteId)?.isSelected
-    
-    if (isCurrentlySelected) {
-      // If it was selected, remove it
-      setSelectedNotesToSend(prev => prev.filter(id => id !== noteId))
-    } else {
-      // If it wasn't selected, add it
-      setSelectedNotesToSend(prev => [...prev, noteId])
+      console.error('Error deleting topic:', error)
+      alert('Failed to delete topic. Please try again.')
     }
   }
   
-  // Send selected notes to this topic
-  const handleSendNotes = async () => {
-    try {
-      const currentUser = auth.currentUser
-      if (!currentUser) return
-      
-      // Get the full note objects for all selected notes
-      const selectedNotes = userNotes.filter(note => note.isSelected)
-      
-      // For each selected note, add it to the topic's sentNotes collection
-      for (const note of selectedNotes) {
-        // Reference to the sentNotes collection for this topic
-        const sentNoteRef = doc(db, 'topics', topicId, 'sentNotes', note.id)
-        
-        // Add the note data to the sentNotes collection
-        await setDoc(sentNoteRef, {
-          ...note,
-          sentAt: new Date().toISOString(),
-          sentBy: currentUser.uid,
-          originalNoteId: note.id
-        })
-      }
-      
-      // Refresh the sent notes
-      await fetchSentNotes(topicId)
-      
-      // Reset the selection and close the modal
-      setUserNotes(prevNotes => 
-        prevNotes.map(note => ({ ...note, isSelected: false }))
-      )
-      setSelectedNotesToSend([])
-      setShowSendNoteModal(false)
-    } catch (error) {
-      console.error('Error sending notes to topic:', error)
-      alert('Failed to send notes to topic. Please try again.')
-    }
-  }
+  // Initial data fetch
+  useEffect(() => {
+    fetchTopicData()
+  }, [fetchTopicData])
   
-  // Format dates for display
-  const formatDate = (dateString) => {
-    if (!dateString) return 'Unknown'
-    const date = new Date(dateString)
-    return date.toLocaleDateString('en-US', { 
-      year: 'numeric', 
-      month: 'short', 
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    })
-  }
+  // Refetch sections when sort order changes
+  useEffect(() => {
+    if (!isLoading) {
+      fetchSections()
+    }
+  }, [fetchSections, sortOrder])
   
   // Settings Panel Component
   const SettingsPanel = () => {
@@ -406,10 +257,10 @@ export default function TopicContent({ topicId, userId, onTopicDeleted, onBookma
           <button 
             className="close-settings-button"
             onClick={() => {
-              setNewTopicName(topic?.name || '');
-              setIsArchived(topic?.archived || false);
-              setIsSettingsOpen(false);
-              setShowDeleteConfirm(false);
+              setTopicName(topic?.name || '')
+              setIsArchived(topic?.archived || false)
+              setIsSettingsOpen(false)
+              setShowDeleteConfirm(false)
             }}
           >
             ×
@@ -422,8 +273,8 @@ export default function TopicContent({ topicId, userId, onTopicDeleted, onBookma
             <input
               id="topic-name"
               type="text"
-              value={newTopicName}
-              onChange={(e) => setNewTopicName(e.target.value)}
+              value={topicName}
+              onChange={(e) => setTopicName(e.target.value)}
               className="settings-input"
               placeholder="Enter topic name"
             />
@@ -490,16 +341,16 @@ export default function TopicContent({ topicId, userId, onTopicDeleted, onBookma
             <button 
               onClick={handleSaveSettings}
               className="save-settings-button"
-              disabled={!newTopicName.trim()}
+              disabled={!topicName.trim()}
             >
               Save Changes
             </button>
             <button 
               onClick={() => {
-                setNewTopicName(topic?.name || '');
-                setIsArchived(topic?.archived || false);
-                setIsSettingsOpen(false);
-                setShowDeleteConfirm(false);
+                setTopicName(topic?.name || '')
+                setIsArchived(topic?.archived || false)
+                setIsSettingsOpen(false)
+                setShowDeleteConfirm(false)
               }}
               className="cancel-settings-button"
             >
@@ -508,374 +359,157 @@ export default function TopicContent({ topicId, userId, onTopicDeleted, onBookma
           </div>
         </div>
       </div>
-    );
-  };
+    )
+  }
   
-  // Send Note Modal
-  const SendNoteModal = () => {
+  // Loading state
+  if (isLoading) {
     return (
-      <div className="send-note-modal-overlay">
-        <div className="send-note-modal">
-          <div className="modal-header">
-            <h2>Send Notes to Topic</h2>
-            <button 
-              className="close-modal-button"
-              onClick={() => {
-                setShowSendNoteModal(false);
-                setUserNotes(prevNotes => 
-                  prevNotes.map(note => ({ ...note, isSelected: false }))
-                );
-                setSelectedNotesToSend([]);
-              }}
-            >
-              ×
-            </button>
-          </div>
-          
-          <div className="modal-content">
-            <p>Select notes to send to <strong>{topic?.name}</strong>:</p>
-            
-            <div className="notes-select-list">
-              {userNotes.length > 0 ? (
-                userNotes.map(note => (
-                  <div 
-                    key={note.id} 
-                    className={`note-select-item ${note.isSelected ? 'selected' : ''}`}
-                    onClick={() => toggleNoteSelection(note.id)}
-                  >
-                    <div className="note-select-checkbox">
-                      <input 
-                        type="checkbox" 
-                        checked={note.isSelected}
-                        onChange={() => {}} // Handled by the div click
-                        onClick={(e) => e.stopPropagation()}
-                      />
-                    </div>
-                    <div className="note-select-content">
-                      <p className="note-preview">{note.content}</p>
-                      <span className="note-date">{formatDate(note.timestamp)}</span>
-                    </div>
-                  </div>
-                ))
-              ) : (
-                <p className="no-notes-message">You don't have any notes to send.</p>
+      <div className="loading-container">
+        <div className="loading-spinner"></div>
+        <p>Loading topic content...</p>
+      </div>
+    )
+  }
+  
+  // Error state
+  if (error) {
+    return (
+      <div className="error-container">
+        <h3>Error</h3>
+        <p>{error}</p>
+        <button 
+          className="retry-button" 
+          onClick={fetchTopicData}
+        >
+          Retry
+        </button>
+      </div>
+    )
+  }
+  
+  return (
+    <div className="topic-content-wrapper">
+      {/* Header */}
+      <div className="topic-header-container">
+        <div className="topic-header-content">
+          <div className="topic-title-row">
+            <h1 className="topic-title">{topic?.name || 'Unknown Topic'}</h1>
+            <div className="topic-actions">
+              {isOwner && (
+                <button 
+                  className="settings-link"
+                  onClick={() => setIsSettingsOpen(true)}
+                >
+                  Settings
+                </button>
               )}
+              <button 
+                className={`bookmark-button ${isBookmarked ? 'bookmarked' : ''}`}
+                onClick={toggleBookmark}
+              >
+                {isBookmarked ? 'Bookmarked' : 'Bookmark'}
+              </button>
             </div>
           </div>
           
-          <div className="modal-footer">
-            <span className="selected-count">
-              {selectedNotesToSend.length} {selectedNotesToSend.length === 1 ? 'note' : 'notes'} selected
-            </span>
-            <div className="modal-actions">
-              <button 
-                className="cancel-button"
-                onClick={() => {
-                  setShowSendNoteModal(false);
-                  setUserNotes(prevNotes => 
-                    prevNotes.map(note => ({ ...note, isSelected: false }))
-                  );
-                  setSelectedNotesToSend([]);
-                }}
-              >
-                Cancel
-              </button>
-              <button 
-                className="send-button"
-                onClick={handleSendNotes}
-                disabled={selectedNotesToSend.length === 0}
-              >
-                Send to Topic
-              </button>
+          <div className="topic-metadata">
+            <div className="topic-info">
+              {topicOwner && (
+                <span className="topic-creator">
+                  Created by: <strong>{topicOwner.displayName}</strong>
+                </span>
+              )}
+              <span className="topic-created-date">
+                {formatDate(topic?.createdAt)}
+              </span>
+              {topic?.updatedAt && topic.updatedAt !== topic.createdAt && (
+                <span className="topic-updated-date">
+                  Updated: {formatDate(topic.updatedAt)}
+                </span>
+              )}
+              <span className="bookmark-count">
+                {bookmarkCount} {bookmarkCount === 1 ? 'bookmark' : 'bookmarks'}
+              </span>
             </div>
           </div>
         </div>
       </div>
-    );
-  };
-  
-  // Render tab content based on active tab
-  const renderTabContent = () => {
-    if (activeTab === 'notes') {
-      return (
-        <div className="topic-notes-tab">
-          {/* Content Section */}
-          <div className="topic-content-section">
-            {isEditing ? (
-              <div className="content-edit-container">
-                <textarea
-                  value={content}
-                  onChange={(e) => setContent(e.target.value)}
-                  className="content-textarea"
-                  placeholder="Add links, notes, or any content about this topic..."
-                />
-                <div className="content-actions">
-                  <button 
-                    onClick={handleSaveContent}
-                    className="primary-button"
-                  >
-                    Save
-                  </button>
-                  <button 
-                    onClick={() => {
-                      setContent(topic?.content || '')
-                      setIsEditing(false)
-                    }}
-                    className="secondary-button"
-                  >
-                    Cancel
-                  </button>
-                </div>
-              </div>
-            ) : (
-              <div className="content-display-container">
-                {content ? (
-                  <div className="content-text">
-                    {content.split('\n').map((line, i) => (
-                      <p key={i}>{line}</p>
-                    ))}
-                  </div>
-                ) : (
-                  <p className="empty-content">
-                    {isOwner ? 'No content yet. Click Edit to add content!' : 'No content has been added to this topic yet.'}
-                  </p>
-                )}
-                {isOwner && (
-                  <button 
-                    onClick={() => setIsEditing(true)}
-                    className="edit-button"
-                  >
-                    Edit
-                  </button>
-                )}
-              </div>
-            )}
-          </div>
-          
-          {/* Sent Notes Section */}
-          <div className="sent-notes-section">
-            <div className="sent-notes-header">
-              <h3>Notes in this Topic</h3>
-              <button 
-                className="send-note-button"
-                onClick={() => setShowSendNoteModal(true)}
-              >
-                Send Notes to Topic
-              </button>
-            </div>
-            
-            {sentNotes.length > 0 ? (
-              <div className="sent-notes-list">
-                {sentNotes
-                  .sort((a, b) => new Date(b.sentAt || b.timestamp) - new Date(a.sentAt || a.timestamp))
-                  .map(note => (
-                    <div key={note.id} className="sent-note-item">
-                      <div className="sent-note-header">
-                        <div className="note-author-info">
-                          {note.profilePic ? (
-                            <img 
-                              src={note.profilePic} 
-                              alt={`${note.author}'s avatar`}
-                              className="author-avatar"
-                            />
-                          ) : (
-                            <div className="author-avatar-placeholder">
-                              {note.author ? note.author.charAt(0).toUpperCase() : '?'}
-                            </div>
-                          )}
-                          <span className="note-author-name">{note.author}</span>
-                        </div>
-                        <span className="sent-note-date">
-                          {formatDate(note.sentAt || note.timestamp)}
-                        </span>
-                      </div>
-                      <p className="sent-note-content">{note.content}</p>
-                    </div>
-                  ))
-              }
-              </div>
-            ) : (
-              <p className="empty-sent-notes">No notes have been added to this topic yet.</p>
-            )}
-          </div>
-        </div>
-      )
-    } else if (activeTab === 'comments') {
-      return (
-        <div className="topic-comments-tab">
-          <h3 className="section-title">Comments</h3>
-          
-          {/* Add comment form */}
-          <form onSubmit={handleAddComment} className="comment-form">
-            <textarea
-              value={newComment}
-              onChange={(e) => setNewComment(e.target.value)}
-              placeholder="Add a comment..."
-              className="comment-textarea"
-              required
-            />
-            <button type="submit" className="comment-submit">
-              Post Comment
-            </button>
-          </form>
-          
-          {/* Comments list */}
-          <div className="comments-list">
-            {comments.length > 0 ? (
-              <div className="comments-items">
-                {comments
-                  .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
-                  .map((comment) => (
-                    <div key={comment.id} className="comment-item">
-                      <div className="comment-header">
-                        <div className="comment-author">
-                          {comment.profilePic ? (
-                            <img 
-                              src={comment.profilePic} 
-                              alt={`${comment.author}'s avatar`}
-                              className="comment-avatar"
-                              onClick={() => navigateToUserProfile(comment.authorId)}
-                              style={{ cursor: 'pointer' }}
-                            />
-                          ) : (
-                            <div 
-                              className="comment-avatar-placeholder"
-                              onClick={() => navigateToUserProfile(comment.authorId)}
-                              style={{ cursor: 'pointer' }}
-                            >
-                              {comment.author ? comment.author.charAt(0).toUpperCase() : '?'}
-                            </div>
-                          )}
-                          <span 
-                            className="author-name clickable"
-                            onClick={() => navigateToUserProfile(comment.authorId)}
-                            style={{ 
-                              cursor: 'pointer', 
-                              color: '#2563eb',
-                              textDecoration: 'underline'
-                            }}
-                          >
-                            {comment.author || 'Anonymous'}
-                          </span>
-                        </div>
-                        <span className="comment-date">
-                          {new Date(comment.createdAt).toLocaleDateString()}
-                        </span>
-                      </div>
-                      <p className="comment-content">{comment.content}</p>
-                    </div>
-                  ))
-                }
-              </div>
-            ) : (
-              <p className="empty-comments">No comments yet. Be the first to comment!</p>
-            )}
-          </div>
-        </div>
-      )
-    }
-  }
 
-  if (isLoading) {
-    return <div className="loading-container">Loading topic data...</div>
-  }
-  
-  if (error) {
-    return <div className="error-container">{error}</div>
-  }
-
-  return (
-    <div className="topic-content-wrapper">
-      {/* Send Note Modal */}
-      {showSendNoteModal && <SendNoteModal />}
-      
-      {/* Main Topic Content with white background */}
+      {/* Main content area */}
       <div className="topic-content">
-        {isSettingsOpen && isOwner ? (
+        {isSettingsOpen ? (
           <SettingsPanel />
         ) : (
           <>
-            <div className="topic-header">
-              <div className="topic-title-section">
-                <div className="title-bookmark-row">
-                  <h2 className="topic-title">{topic?.name || 'Unknown Topic'}</h2>
-                  <div className="topic-actions">
-                    {isOwner && (
-                      <button 
-                        className="settings-button"
-                        onClick={() => setIsSettingsOpen(true)}
-                        title="Topic settings"
-                      >
-                        ⚙️
-                      </button>
-                    )}
-                    <button 
-                      className={`bookmark-button ${isBookmarked ? 'bookmarked' : ''}`}
-                      onClick={toggleBookmark}
-                    >
-                      {isBookmarked ? 'Bookmarked ★' : 'Bookmark ☆'}
-                    </button>
-                  </div>
-                </div>
-                
-                <div className="topic-metadata">
-                  {topicOwner && (
-                    <div className="topic-owner">
-                      Created by: {' '}
-                      <span 
-                        className="owner-name clickable"
-                        onClick={() => navigateToUserProfile(topicOwner.displayName)}
-                        style={{ 
-                          cursor: 'pointer', 
-                          color: '#2563eb',
-                          textDecoration: 'underline',
-                          fontWeight: '500'
-                        }}
-                      >
-                        {topicOwner.displayName}
-                      </span>
-                    </div>
+            {/* Add Section Control - simplified */}
+            {isOwner && (
+              <div className="add-section-compact">
+                <AddSection 
+                  topicId={topicId}
+                  userId={userId}
+                  onSectionAdded={handleAddSection}
+                />
+              </div>
+            )}
+            
+            {/* View Controls */}
+            <div className="view-controls">
+              <div className="view-style-toggle">
+                <span>View:</span>
+                <button 
+                  className={`view-toggle-btn ${viewStyle === 'timeline' ? 'active' : ''}`}
+                  onClick={() => setViewStyle('timeline')}
+                >
+                  Timeline
+                </button>
+                <button 
+                  className={`view-toggle-btn ${viewStyle === 'compact' ? 'active' : ''}`}
+                  onClick={() => setViewStyle('compact')}
+                >
+                  Compact
+                </button>
+              </div>
+              
+              <div className="sort-order-toggle">
+                <span>Sort:</span>
+                <button 
+                  className={`sort-toggle-btn ${sortOrder === 'newest' ? 'active' : ''}`}
+                  onClick={() => setSortOrder('newest')}
+                >
+                  Newest
+                </button>
+                <button 
+                  className={`sort-toggle-btn ${sortOrder === 'oldest' ? 'active' : ''}`}
+                  onClick={() => setSortOrder('oldest')}
+                >
+                  Oldest
+                </button>
+              </div>
+            </div>
+            
+            {/* Sections List */}
+            <div className={`sections-list ${viewStyle}`}>
+              {sections.length > 0 ? (
+                sections.map(section => (
+                  <Section
+                    key={section.id}
+                    section={section}
+                    topicId={topicId}
+                    isOwner={isOwner}
+                    currentUser={auth.currentUser || {}}
+                    onDelete={handleDeleteSection}
+                    viewStyle={viewStyle}
+                  />
+                ))
+              ) : (
+                <div className="empty-sections-message">
+                  <p>This topic doesn't have any sections yet.</p>
+                  {isOwner && (
+                    <p>Use the section form above to add content to this topic.</p>
                   )}
-                  
-                  <div className="topic-dates">
-                    <div className="created-date">
-                      Created: <span>{formatDate(topic?.createdAt)}</span>
-                    </div>
-                    {topic?.updatedAt && topic.updatedAt !== topic.createdAt && (
-                      <div className="updated-date">
-                        Last updated: <span>{formatDate(topic.updatedAt)}</span>
-                      </div>
-                    )}
-                  </div>
-                  
-                  <div className="bookmark-count">
-                    <span>{bookmarkCount}</span> {bookmarkCount === 1 ? 'bookmark' : 'bookmarks'}
-                  </div>
                 </div>
-              </div>
-            </div>
-            
-            {/* Tabs Navigation */}
-            <div className="topic-tabs-navigation">
-              <div className="topic-main-tabs">
-                <button 
-                  className={`topic-main-tab ${activeTab === 'notes' ? 'active-main-tab' : ''}`}
-                  onClick={() => setActiveTab('notes')}
-                >
-                  Notes
-                </button>
-                <button 
-                  className={`topic-main-tab ${activeTab === 'comments' ? 'active-main-tab' : ''}`}
-                  onClick={() => setActiveTab('comments')}
-                >
-                  Comments ({comments.length})
-                </button>
-              </div>
-            </div>
-            
-            {/* Tab Content */}
-            <div className="topic-tab-content">
-              {renderTabContent()}
+              )}
             </div>
           </>
         )}

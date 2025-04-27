@@ -1,451 +1,541 @@
-/* Profile pic and placeholder - tiny size */
-.profile-pic, 
-.profile-pic-placeholder {
-  width: 100%;
-  height: 100%;
-  border-radius: 50%;
-  overflow: hidden;
+/* =============================
+   NAVIGATION PANEL STRUCTURE
+   ============================= */
+   .nav-panel {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    position: relative;
+    gap: 4px;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+  }
+  
+  .nav-scroll-area {
+    flex: 1;
+    overflow-y: auto;
+    padding-bottom: 16px;
+    padding-right: 8px;
+    scrollbar-width: thin;
+  }
+  
+  /* Scrollbar styling */
+  .nav-scroll-area::-webkit-scrollbar {
+    width: 3px;
+  }
+  
+  .nav-scroll-area::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  
+  .nav-scroll-area::-webkit-scrollbar-thumb {
+    background-color: rgba(0, 0, 0, 0.06);
+    border-radius: 3px;
+  }
+  
+  .nav-container {
+    background-color: transparent;
+    padding: 0;
+    margin-bottom: 0;
+  }
+  
+  .nav-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+  
+  .nav-divider {
+    height: 1px;
+    background-color: #e1e1e1;
+    margin: 8px 0;
+    width: 100%;
+  }
+  
+  /* =============================
+     NAVIGATION ITEMS
+     ============================= */
+  .nav-item {
+    padding: 0.7rem;
+    border-radius: 0.25rem;
+    cursor: pointer;
+    margin-bottom: 2px;
+    padding-left: 1rem;
+    color: #4c4e53;
+    position: relative;
+    user-select: none;
+  }
+  
+  .nav-item:hover {
+    background-color: rgba(0, 0, 0, 0.05);
+  }
+  
+  .nav-item.nav-item-active {
+    background-color: rgba(55, 65, 81, 0.1);
+    color: #4F46E5;
+    font-weight: 500;
+  }
+  
+  .nav-item a, 
+  .nav-item-content {
+    text-decoration: none;
+    color: inherit;
+    display: flex;
+    align-items: center;
+    width: 100%;
+    cursor: pointer;
+    position: relative;
+    z-index: 2;
+  }
+  
+  .nav-item-content {
+    display: flex;
+    align-items: center;
+    gap: 0;
+  }
+  
+  /* Disabled state */
+  .nav-item.disabled {
+    opacity: 0.6;
+    cursor: not-allowed !important;
+    pointer-events: none;
+  }
+  
+  .nav-item.disabled * {
+    cursor: not-allowed !important;
+  }
+  
+  .nav-item-empty {
+    color: #9ca3af;
+    padding: 10px 12px;
+    font-style: italic;
+    font-size: 0.9rem;
+  }
+  
+  /* =============================
+     DROPDOWN & TOPICS
+     ============================= */
+  .topic-dropdown {
+    cursor: pointer;
+    user-select: none;
+  }
+  
+  .dropdown-icon {
+    padding-right: 4px;
+    font-size: 10px;
+    transition: transform 0.2s ease;
+  }
+  
+  .dropdown-icon.expanded {
+    transform: rotate(0deg);
+  }
+  
+  .dropdown-icon.collapsed {
+    transform: rotate(-90deg);
+  }
+  
+  .topic-subitems {
+    padding-left: 20px;
+    font-size: 0.9rem;
+  }
+  
+  .coming-soon-badge {
+    font-size: 10px;
+    margin-left: auto;
+    background-color: #f3f4f6;
+    padding: 2px 6px;
+    border-radius: 4px;
+    color: #6b7280;
+    user-select: none;
+  }
+  
+  /* Topic edit mode */
+  .edit-topics-button {
+    background: none;
+    border: none;
+    font-size: 0.75rem;
+    opacity: 0.8;
+    transition: opacity 0.2s;
+    cursor: pointer;
+    color: #68717e;
+    padding: 2px 4px;
+    border-radius: 4px;
+  }
+  
+  .edit-topics-button.editing {
+    opacity: 1;
+    background-color: #e5e7eb;
+    color: #374151;
+    font-weight: bold;
+  }
+  
+  .edit-topics-button.editing::after {
+    content: " (Done)";
+    font-weight: bold;
+  }
+  
+  .edit-topics-button:hover {
+    opacity: 1 !important;
+    background-color: rgba(0, 0, 0, 0.05);
+  }
+  
+  .topic-edit-mode .delete-topic-button {
+    display: block;
+  }
+  
+  .delete-topic-button {
+    display: none;
+    background: none;
+    border: none;
+    font-size: 1rem;
+    color: #9ca3af;
+    cursor: pointer;
+    padding: 0 4px;
+    transition: color 0.2s;
+  }
+  
+  .delete-topic-button:hover {
+    color: #ef4444;
+  }
+  
+  .topic-actions {
+    display: flex;
+    gap: 5px;
+  }
+  
+  .archive-topic-button,
+  .unarchive-topic-button {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 16px;
+    padding: 0;
+    margin: 0;
+    color: #555;
+  }
+  
+  .archive-topic-button:hover,
+  .unarchive-topic-button:hover {
+    color: #1a73e8;
+  }
+  
+  .archived-topic {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    color: #666;
+  }
+  
+  /* =============================
+     PROFILE SECTION
+     ============================= */
+  .profile-card-fixed-container {
+    position: sticky;
+    bottom: 0;
+    background: inherit;
+    margin-top: auto;
+    width: 100%;
+    z-index: 5;
+    padding-right: 2px;
+    box-shadow: 0 -4px 6px -6px rgba(0, 0, 0, 0.05);
+  }
+  
+  .profile-card-fixed-container .nav-divider {
+    margin: 0 0 2px 0;
+    height: 1px;
+  }
+  
+  .profile-card {
+    background-color: transparent;
+    border-radius: 6px;
+    padding: 6px 8px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+    min-height: 40px;
+    position: relative;
+    z-index: 2;
+  }
+  
+  .profile-card:hover {
+    background-color: rgba(0, 0, 0, 0.05);
+  }
+  
+  .profile-card-active {
+    background-color: rgba(59, 130, 246, 0.08);
+  }
+  
+  .profile-pic-wrapper {
+    position: relative;
+    width: 36px;
+    height: 36px;
+    flex-shrink: 0;
+    margin-right: 4px;
+  }
+  
+  .profile-pic, 
+  .profile-pic-placeholder {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    overflow: hidden;
+  }
+  
+  .profile-pic-placeholder {
+    background-color: #6366f1;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    font-size: 0.9rem;
+  }
+  
+  .profile-info {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    flex-grow: 1;
+    justify-content: center;
+  }
+  
+  .profile-name {
+    font-size: 0.85rem;
+    font-weight: 600;
+    margin: 0 0 1px 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    line-height: 1.2;
+  }
+  
+  .profile-bio-preview {
+    font-size: 0.75rem;
+    color: #6b7280;
+    margin: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    transition: color 0.2s ease;
+    line-height: 1.1;
+    max-height: 1.1em;
+  }
+  
+  .profile-card:hover .profile-bio-preview {
+    color: #4b5563;
+  }
+  
+  /* =============================
+     ACTION BUTTONS
+     ============================= */
+  .action-buttons-container {
+    display: flex;
+    gap: 8px;
+    padding: 8px;
+  }
+  
+  .action-button {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 8px;
+    background-color: #f3f4f6;
+    border-radius: 6px;
+    font-size: 13px;
+    text-decoration: none !important;
+    color: #374151;
+    cursor: pointer !important;
+    user-select: none;
+    transition: all 0.15s ease;
+    position: relative;
+    z-index: 2;
+    border: none;
+    outline: none;
+    white-space: nowrap;
+    height: 36px; /* Fixed height */
+  }
+  
+    /* Improved vertical alignment for icon and text in action buttons */
+  .action-button svg {
+    flex-shrink: 0;
+    vertical-align: middle;
+    position: relative;
+    top: -1px; /* Small adjustment for alignment */
+  }
+
+  .action-button span {
+    display: inline-block;
+    vertical-align: middle;
+    line-height: 1;
+    position: relative;
+    top: 1px; /* Small adjustment for alignment */
+  }
+
+  /* Improved dropdown icon with better rotation */
+  .dropdown-icon {
+    padding-right: 6px;
+    font-size: 10px;
+    transition: transform 0.3s ease;
+    display: inline-block;
+    transform-origin: center center;
+  }
+
+  .dropdown-icon.expanded {
+    transform: rotate(0deg);
+  }
+
+  .dropdown-icon.collapsed {
+    transform: rotate(-90deg);
+  }
+
+  /* =============================
+     PROFILE DROPDOWN MENU
+     ============================= */
+  .profile-dropdown-menu {
+    position: absolute;
+    right: 12px;
+    bottom: 45px;
+    background-color: white !important;
+    z-index: 1000;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    min-width: 150px;
+    padding: 4px 0;
+  }
+  
+  .profile-menu-container {
+    position: relative;
+    display: inline-block;
+    z-index: 5;
+  }
+  
+  /* =============================
+     LOADING STATES
+     ============================= */
+  .text-placeholder {
+    height: 1rem;
+    background-color: #f3f4f6;
+    border-radius: 4px;
+    margin-bottom: 8px;
+    animation: pulse 1.5s infinite;
+  }
+  
+  @keyframes pulse {
+    0% {
+      opacity: 0.6;
+    }
+    50% {
+      opacity: 0.8;
+    }
+    100% {
+      opacity: 0.6;
+    }
+  }
+  
+  /* =============================
+     RESPONSIVE ADJUSTMENTS
+     ============================= */
+  @media (max-width: 768px) {
+    .nav-panel {
+      width: 100%;
+    }
+    
+    .profile-card-fixed-container {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: white;
+      box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
+      padding: 8px;
+    }
+    
+    .action-buttons-container {
+      padding: 8px 8px 16px 8px;
+    }
+  }
+
+  /* Add or update these styles in your CSS file */
+
+/* Make topic items smaller */
+.topic-subitems .nav-item {
+  padding: 0.5rem 0.7rem;
+  font-size: 0.85rem;
 }
 
-.profile-pic-placeholder {
-  background-color: #6366f1;
+/* Improved disabled state */
+.nav-item.disabled {
+  opacity: 0.6;
+  cursor: not-allowed !important;
+}
+
+.nav-item.disabled * {
+  cursor: not-allowed !important;
+}
+
+/* Make sure action buttons have proper active state */
+.action-button.active {
+  background-color: #e5e7eb;
+  color: #4F46E5;
+  font-weight: 500;
+}
+
+.action-button:not(.active) {
+  background-color: #f3f4f6;
+  color: #374151;
+}
+
+.notification-badge {
+  background-color: #ef4444;
   color: white;
+  font-size: 0.75rem;
+  font-weight: 600;
+  width: 20px;
+  height: 20px;
+  border-radius: 10px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-weight: 600;
-  font-size: 0.5rem; /* Tiny font */
-}/* NavPanel structure for fixed profile card */
-.nav-panel {
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-  position: relative;
-  gap: 12px;
-}
-
-/* Scrollable area that contains all nav items except the profile card */
-.nav-scroll-area {
-  flex: 1;
-  overflow-y: auto;
-  padding-bottom: 16px;
-  padding-right: 8px; /* Reduced padding */
-  scrollbar-width: thin;
-}
-
-/* Container for the fixed profile card at the bottom */
-.profile-card-fixed-container {
-  position: sticky;
-  bottom: 0;
-  background: inherit;
-  margin-top: auto;
-  width: 100%;
-  z-index: 5;
-  padding-right: 2px; /* Tiny padding */
-}
-
-/* Style for the nav divider before the fixed profile card */
-.profile-card-fixed-container .nav-divider {
-  margin: 0 0 2px 0; /* Tiny margin */
-  height: 1px; /* Thinner divider */
-}
-
-/* For WebKit browsers */
-.nav-scroll-area::-webkit-scrollbar {
-  width: 3px; /* Very thin scrollbar */
-}
-
-.nav-scroll-area::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-.nav-scroll-area::-webkit-scrollbar-thumb {
-  background-color: rgba(0, 0, 0, 0.06); /* Even lighter scrollbar */
-  border-radius: 3px;
-}
-
-/* Make sure dropdown menu appears above other elements */
-.profile-dropdown-menu {
-  position: absolute;
-  right: 12px;
-  bottom: 45px; /* Position above the button instead of below */
-  background-color: white !important;
-  z-index: 1000;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
-  border: 1px solid #e5e7eb;
-  border-radius: 8px;
-  min-width: 150px;
-  padding: 4px 0;
-}
-
-/* Nav Panel structure */
-.nav-container {
-  background-color: transparent;
-  padding: 0rem;
-  margin-bottom: 20px;
-}
-  
-.nav-title {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  font-size: 0.8rem;
-  font-weight: 600;
-  margin-bottom: 0rem;
-  margin-top: 0.5rem;
-  color:#68717e;
-}
-
-.nav-item {
-  padding: 0.7rem;
-  border-radius: 0.25rem;
-  cursor: pointer;
-  margin-bottom: 0.3rem;
-  padding-left: 1rem;
-  color: #4c4e53;
-}
-  
-.nav-item:hover {
-  background-color: #0000000c;
-}
-
-/* Fix for links - remove underline */
-.nav-item a, .nav-item-content {
-  text-decoration: none;
-  color: inherit;
-  display: flex;
-  align-items: center;
-  width: 100%;
-}
-  
-.nav-item-active {
-  background-color: #0000001c;
-  color: #424653;
-}
-
-.nav-item.nav-item-active {
-  background-color: rgba(55, 65, 81, 0.1); /* More subtle gray background */
-  color: #4F46E5; /* Modern indigo color instead of blue */
-}
-
-.nav-list {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-}
-
-.nav-divider {
-  height: 1px;
-  background-color: #e1e1e1;
-  margin: 15px 0;
-  width: 100%;
+  margin-left: auto;
 }
 
 .nav-item-content {
   display: flex;
   align-items: center;
-  gap: 2px;
+  position: relative;
+  width: 100%;
 }
 
-/* Topic Edit Mode */
-.edit-topics-button {
-  background: none;
-  border: none;
-  font-size: 0.75rem;
-  opacity: 0.8; /* Changed from 0 to 0.8 to ensure visibility */
-  transition: opacity 0.2s;
-  cursor: pointer;
-  color: #68717e;
-  padding: 2px 4px;
-  border-radius: 4px;
-}
-
-/* Add styling for when in edit mode */
-.edit-topics-button.editing {
-  opacity: 1;
-  background-color: #e5e7eb;
-  color: #374151;
-  font-weight: bold;
-}
-
-/* Add "Done" text when in edit mode */
-.edit-topics-button.editing::after {
-  content: " (Done)";
-  font-weight: bold;
-}
-
-.nav-title:hover .edit-topics-button {
-  opacity: 1;
-}
-
-.edit-topics-button:hover {
-  opacity: 1 !important;
-  background-color: rgba(0, 0, 0, 0.05);
-}
-
-.edit-topics-button:focus,
-.edit-topics-button:active {
-  opacity: 1;
-}
-
-.topic-edit-mode .delete-topic-button {
-  display: block;
-}
-
-.delete-topic-button {
-  display: none;
-  background: none;
-  border: none;
-  font-size: 1rem;
-  color: #9ca3af;
-  cursor: pointer;
-  padding: 0 4px;
-  transition: color 0.2s;
-}
-
-.delete-topic-button:hover {
-  color: #ef4444;
-}
-
-.topic-actions {
+/* Logo Placeholder Styling */
+.logo-placeholder {
   display: flex;
-  gap: 5px;
-}
-
-.archive-topic-button,
-.unarchive-topic-button {
-  background: none;
-  border: none;
-  cursor: pointer;
-  font-size: 16px;
-  padding: 0;
-  margin: 0;
-  color: #555;
-}
-
-.archive-topic-button:hover,
-.unarchive-topic-button:hover {
-  color: #1a73e8;
-}
-
-.archived-topic {
-  display: flex;
-  justify-content: space-between;
+  justify-content: center;
   align-items: center;
-  width: 100%;
-  color: #666;
+  padding: 16px 8px;
+  margin-bottom: 8px;
 }
 
-/* Back button */
-.back-to-my-notes-button {
-  display: block;
+.logo-content {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 40px;
   width: 100%;
-  text-align: left;
-  padding: 10px 12px;
-  margin-bottom: 12px;
-  border: none;
-  border-radius: 6px;
   background-color: #f3f4f6;
-  color: #4b5563;
-  font-size: 0.9rem;
-  font-weight: 500;
-  cursor: pointer;
+  border-radius: 6px;
+  color: #6b7280;
+  font-weight: 700;
+  font-size: 1.2rem;
+  letter-spacing: 1px;
   transition: all 0.2s ease;
 }
 
-.back-to-my-notes-button:hover {
+.logo-content:hover {
   background-color: #e5e7eb;
-  color: #111827;
-}
-
-.viewed-user-info {
-  margin-bottom: 16px;
-}
-
-.viewed-user-info h3 {
-  font-size: 0.95rem;
-  color: #4b5563;
-  margin: 0;
-  padding: 0 12px;
-  font-weight: 500;
-}
-
-/* Profile Card - significantly smaller size */
-.profile-card {
-  background-color: transparent;
-  border-radius: 6px;
-  padding: 6px 8px; /* Further reduced padding */
-  display: flex;
-  align-items: center;
-  gap: 8px; /* Further reduced gap */
-  cursor: pointer;
-  transition: background-color 0.2s;
-  min-height: 40px; /* Ensure minimum height */
-}
-
-.profile-card:hover {
-  background-color: rgba(0, 0, 0, 0.05); /* Subtle hover effect */
-}
-
-.profile-card-active {
-  background-color: rgba(59, 130, 246, 0.08); /* Light blue for active state */
-}
-  
-.profile-pic-wrapper {
-  position: relative;
-  width: 36px; /* Further reduced size */
-  height: 36px; /* Further reduced size */
-  flex-shrink: 0;
-  margin-right: 4px; /* Further reduced margin */
-}
-  
-.profile-info {
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-  flex-grow: 1;
-  justify-content: center; /* Center content vertically */
-}
-  
-.profile-name {
-  font-size: 0.85rem; /* Further reduced size */
-  font-weight: 600;
-  margin: 0 0 1px 0; /* Further reduced margin */
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  line-height: 1.2; /* Tighter line height */
-}
-  
-.profile-bio-preview {
-  font-size: 0.75rem; /* Further reduced size */
-  color: #6b7280;
-  margin: 0;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  transition: color 0.2s ease;
-  line-height: 1.1; /* Even tighter line height */
-  max-height: 1.1em; /* Limit to single line */
-}
-
-.profile-card:hover .profile-bio-preview {
-  color: #4b5563; /* Slightly darker on hover */
-}
-
-/* Kebab Menu Styles */
-.profile-menu-container {
-  position: relative; /* Changed from absolute to relative */
-  display: inline-block; /* Added to contain the dropdown properly */
-  z-index: 5;
-}
-
-.kebab-menu-button {
-  background: none;
-  border: none;
-  font-size: 1.2rem;
-  cursor: pointer;
-  opacity: 0;
-  color: #68717e;
-  padding: 2px 6px;
-  border-radius: 4px;
-  transition: all 0.2s ease-in-out;
-}
-
-.profile-card:hover .kebab-menu-button {
-  opacity: 1 !important;
-  background-color: rgba(0, 0, 0, 0.05);  }
-
-.kebab-menu-button:hover {
-  opacity: 1 !important;
-  background-color: rgba(0, 0, 0, 0.05);
-}
-
-.profile-dropdown-menu {
-  position: absolute;
-  right: 0;
-  top: 100%; /* Position below the kebab button */
-  z-index: 10;
-  background-color: white; /* Ensure this is working */
-  border: 1px solid #e5e7eb;
-  border-radius: 8px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-  min-width: 150px;
-  margin-top: 4px;
-  overflow: hidden; /* Ensure content doesn't overflow */
-}
-
-.menu-item {
-  display: block;
-  width: 100%;
-  text-align: left;
-  padding: 8px 12px;
-  background: none;
-  border: none;
-  cursor: pointer;
-  transition: background-color 0.2s;
-  color: #4b5563;
-  font-size: 0.875rem;
-}
-
-.menu-item:hover {
-  background-color: #f3f4f6;
-  color: #111827;
-}
-
-.profile-dropdown-menu-portal {
-  position: fixed;
-  background-color: white;
-  border: 1px solid #e5e7eb;
-  border-radius: 8px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
-  z-index: 1000;
-  min-width: 150px;
-  padding: 4px 0;
-  /* We'll position this with JS */
-}
-
-/* Add these styles to your navpanel.css file */
-
-/* Profile Nav Card - styled for the top of the navigation */
-.profile-nav-card {
-background-color: white;
-border-radius: 10px;
-padding: 16px;
-display: flex;
-align-items: center;
-gap: 12px;
-cursor: pointer;
-transition: all 0.2s ease;
-margin-bottom: 8px;
-box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
-border: 1px solid #f0f0f0;
-}
-
-.profile-nav-card:hover {
-background-color: #f9fafb;
-transform: translateY(-2px);
-box-shadow: 0 4px 8px rgba(0, 0, 0, 0.08);
-}
-
-.profile-nav-card.profile-card-active {
-background-color: rgba(59, 130, 246, 0.08);
-border-color: rgba(59, 130, 246, 0.2);
-}
-
-.nav-item-empty {
-color: #9ca3af;
-padding: 10px 12px;
-font-style: italic;
-font-size: 0.9rem;
-}
-
-/* Custom styles for empty state */
-.nav-list:empty::after {
-content: "No topics yet";
-display: block;
-padding: 12px;
-color: #9ca3af;
-font-style: italic;
-font-size: 0.9rem;
+  color: #4F46E5;
 }

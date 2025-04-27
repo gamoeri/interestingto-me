@@ -1,7 +1,6 @@
 'use client'
 
 import { useState, useEffect, memo, useRef } from 'react'
-import ProfileEdit from './ProfileEdit'
 import useNotes from '@/hooks/useNotes.tsx'
 
 export default memo(function NotesSection({ 
@@ -19,21 +18,14 @@ export default memo(function NotesSection({
   onBackToFeed,
   displayName,
   profilePic,
-  onUpdateDisplayName,
-  onUpdateBio,
-  onUpdateProfilePic,
-  onUpdateBannerImage,
-  onUpdateBackgroundColor,
-  onChangeNoteTopic, // New prop for changing a note's topic
+  onChangeNoteTopic, // For changing a note's topic
   bannerImage = userProfile?.bannerImage || '/default-banner.jpg',
   backgroundColor = userProfile?.backgroundColor || '#f8f8f8'
 }) {
   
   console.log("NotesSection rendering", { viewMode, activeNoteId });
 
-
   const [newNote, setNewNote] = useState('')
-  const [showProfileEdit, setShowProfileEdit] = useState(false)
   const [activeTopicFilter, setActiveTopicFilter] = useState('all')
   const [replyContent, setReplyContent] = useState('')
   const [showTopicDropdown, setShowTopicDropdown] = useState(null) // For storing ID of note with open dropdown
@@ -69,7 +61,11 @@ export default memo(function NotesSection({
   const handleAddNote = () => {
     if (newNote.trim() && newNote.length <= 280) {
       const topicIds = activeTopicFilter !== 'all' ? [activeTopicFilter] : [];
-      onAddNote(newNote, topicIds);
+      console.log("Author info being passed:", { displayName, profilePic });
+      onAddNote(newNote, topicIds, {
+        displayName,
+        profilePic
+      });
       setNewNote('');
     }
   };
@@ -98,7 +94,7 @@ export default memo(function NotesSection({
     }
   };
 
-  // New function to handle changing a note's topic
+  // Handle changing a note's topic
   const handleChangeNoteTopic = (noteId, topicId) => {
     if (onChangeNoteTopic) {
       onChangeNoteTopic(noteId, topicId);
@@ -107,37 +103,36 @@ export default memo(function NotesSection({
   };
   
   // Toggle topic dropdown for a specific note
-  // Toggle topic dropdown for a specific note
   const toggleTopicDropdown = (noteId, e, type = 'inline') => {
-  // Stop event propagation to prevent immediate closing
-  if (e) {
-    e.stopPropagation();
-  }
-  
-  // If opening dropdown, calculate position
-  if (showTopicDropdown !== noteId) {
-    const rect = e.currentTarget.getBoundingClientRect();
-    
-    // Different positioning based on dropdown type
-    if (type === 'banner') {
-      // Position below the banner kebab button
-      setDropdownPosition({
-        top: rect.bottom + window.scrollY,
-        left: rect.right - 160, // Align right edge with button
-      });
-    } else if (type === 'header' || type === 'inline') {
-      // Position below the badge or "Add a badge" text
-      setDropdownPosition({
-        top: rect.bottom + window.scrollY + 4, // Add a bit of space
-        left: rect.left, // Align left edge with the badge
-      });
+    // Stop event propagation to prevent immediate closing
+    if (e) {
+      e.stopPropagation();
     }
     
-    setDropdownType(type);
-  }
-  
-  setShowTopicDropdown(showTopicDropdown === noteId ? null : noteId);
-};
+    // If opening dropdown, calculate position
+    if (showTopicDropdown !== noteId) {
+      const rect = e.currentTarget.getBoundingClientRect();
+      
+      // Different positioning based on dropdown type
+      if (type === 'banner') {
+        // Position below the banner kebab button
+        setDropdownPosition({
+          top: rect.bottom + window.scrollY,
+          left: rect.right - 160, // Align right edge with button
+        });
+      } else if (type === 'header' || type === 'inline') {
+        // Position below the badge or "Add a badge" text
+        setDropdownPosition({
+          top: rect.bottom + window.scrollY + 4, // Add a bit of space
+          left: rect.left, // Align left edge with the badge
+        });
+      }
+      
+      setDropdownType(type);
+    }
+    
+    setShowTopicDropdown(showTopicDropdown === noteId ? null : noteId);
+  };
   
   const filteredNotes = activeTopicFilter === 'all'
     ? notes
@@ -154,29 +149,15 @@ export default memo(function NotesSection({
         }
         return false;
       });
-
-  if (showProfileEdit) {
-    return (
-      <ProfileEdit 
-        userProfile={userProfile}
-        onUpdateDisplayName={onUpdateDisplayName}
-        onUpdateBio={onUpdateBio}
-        onUpdateProfilePic={onUpdateProfilePic}
-        onUpdateBannerImage={onUpdateBannerImage}
-        onUpdateBackgroundColor={onUpdateBackgroundColor}
-        onClose={() => setShowProfileEdit(false)}
-      />
-    );
-  }
   
   // Find active note for reply view
   const activeNote = activeNoteId ? notes.find(note => note.id === activeNoteId) : null;
   
   return (
     <div className="notes-section-redesigned">
-      {/* Profile Banner */}
+      {/* Profile Banner (Keep it but remove Edit Profile button) */}
       {viewMode === 'feed' && (
-          <>
+        <>
           <div className="profile-banner" style={{ backgroundImage: `url(${bannerImage})` }}>
             <div className="profile-info-container">
               <div className="profile-pic-container">
@@ -195,7 +176,7 @@ export default memo(function NotesSection({
             </div>
           </div>
           
-          {/* Profile Info */}
+          {/* Profile Info - without Edit button */}
           <div className="profile-details">
             <div className="profile-info-main">
               <div>
@@ -204,12 +185,7 @@ export default memo(function NotesSection({
                   {userProfile?.bio || "Learning and sharing my journey. Taking notes on everything that inspires me."}
                 </p>
               </div>
-              <button 
-                className="edit-profile-button"
-                onClick={() => setShowProfileEdit(true)}
-              >
-                Edit Profile
-              </button>
+              {/* Edit button removed from here */}
             </div>
           </div>
           
@@ -446,7 +422,7 @@ export default memo(function NotesSection({
                                     <button 
                                       className="add-badge-link"
                                       onClick={(e) => toggleTopicDropdown(note.id, e, 'inline')}
-                                      title="Change topic" // Add the title attribute here
+                                      title="Change topic"
                                     >
                                       Add a badge
                                     </button>
